@@ -370,11 +370,13 @@
             <ul class="routes-list">
                 {% for row in routes %}
                 <li class="route-item">
-                    <div class="route-path">{{ row['path'] }}</div>
+                    <div class="route-path">{{ row['paths'][0]['path'] if row['paths'] else 'Keine URL' }}</div>
                     <div class="action-links">
-                        <a href="http://{{ request.host.split(':')[0] }}:8080{{ row['path'] }}" target="_blank"
+                        {% if row['paths'] %}
+                        <a href="http://{{ request.host.split(':')[0] }}:8080{{ row['paths'][0]['path'] }}" target="_blank"
                             class="route-link">Ansehen <span class="material-symbols-outlined"
                                 style="font-size: 18px;">open_in_new</span></a>
+                        {% endif %}
                         <a href="/files/{{ row['id'] }}" class="route-link"
                             style="background:#E8DEF8;color:#1D192B">Dateien bearbeiten & anlegen <span
                                 class="material-symbols-outlined" style="font-size: 18px;">edit_document</span></a>
@@ -384,11 +386,29 @@
                                 <span class="material-symbols-outlined" style="font-size: 18px;">delete</span></button>
                         </form>
                     </div>
-                    <form action="/edit_url/{{ row['id'] }}" method="post" class="url-editor">
-                        <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">link</span>
-                        <input type="text" name="new_url" value="{{ row['path'] }}" required>
-                        <button type="submit" class="btn-filled" style="padding: 8px 16px;">URL Ändern</button>
-                    </form>
+
+                    <div style="margin-top: 8px;">
+                        <div style="font-size: 13px; font-weight: 500; color: var(--md-sys-color-outline); margin-bottom: 8px;">URLs für dieses Projekt:</div>
+                        {% for p in row['paths'] %}
+                        <div class="url-editor" style="margin-bottom: 8px;">
+                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">link</span>
+                            <form action="/edit_url/{{ p['id'] }}" method="post" style="display:flex; gap:8px; flex-grow:1; margin:0;">
+                                <input type="text" name="new_url" value="{{ p['path'] }}" required style="flex-grow:1; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
+                                <button type="submit" class="btn-filled" style="padding: 8px 16px;">Ändern</button>
+                            </form>
+                            <form action="/remove_url/{{ p['id'] }}" method="post" style="margin:0;" onsubmit="return confirm('URL entfernen?');">
+                                <button type="submit" class="route-link danger" style="border:none; cursor:pointer; padding: 8px 12px;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        <form action="/add_url/{{ row['id'] }}" method="post" class="url-editor" style="margin-top: 4px;">
+                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">add_link</span>
+                            <input type="text" name="new_url" placeholder="/weitere-url/" required style="flex-grow:1; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
+                            <button type="submit" class="btn-filled" style="padding: 8px 16px;">Hinzufügen</button>
+                        </form>
+                    </div>
                 </li>
                 {% else %}
                 <li style="color: #49454F; text-align: center; padding: 16px 0;">Noch keine Projekte gelaunched. Klicke

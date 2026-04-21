@@ -11,15 +11,25 @@ admin_app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
 host_app = Flask("host_app", template_folder="templates")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploaded_html')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+UPLOAD_FOLDER = os.path.join(DATA_DIR, 'uploaded_html')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-DB_PATH = os.path.join(BASE_DIR, 'hela.db')
+DB_PATH = os.path.join(DATA_DIR, 'hela.db')
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS projects 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE, project_dir TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS projects
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, project_dir TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS project_paths
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, path TEXT UNIQUE,
+                  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    # Migrate: if projects have paths not yet in project_paths, copy them over
+    existing = c.execute("SELECT id, path FROM projects WHERE path IS NOT NULL AND path != ''").fetchall()
+    for row in existing:
+        if not c.execute("SELECT id FROM project_paths WHERE project_id=? AND path=?", (row[0], row[1])).fetchone():
+            c.execute("INSERT OR IGNORE INTO project_paths (project_id, path) VALUES (?, ?)", (row[0], row[1]))
     conn.commit()
     conn.close()
 
@@ -34,7 +44,11 @@ def get_db_connection():
 @admin_app.route('/', methods=['GET'])
 def index():
     conn = get_db_connection()
-    routes = conn.execute("SELECT id, path, project_dir FROM projects ORDER BY id DESC").fetchall()
+    projects = conn.execute("SELECT id, project_dir FROM projects ORDER BY id DESC").fetchall()
+    routes = []
+    for proj in projects:
+        paths = conn.execute("SELECT id, path FROM project_paths WHERE project_id=? ORDER BY id", (proj['id'],)).fetchall()
+        routes.append({'id': proj['id'], 'project_dir': proj['project_dir'], 'paths': [{'id': p['id'], 'path': p['path']} for p in paths]})
     conn.close()
     return render_template('admin.html', routes=routes)
 
@@ -49,7 +63,7 @@ def create_project():
     if not url_path.endswith('/'): url_path += '/'
         
     conn = get_db_connection()
-    if conn.execute("SELECT id FROM projects WHERE path=?", (url_path,)).fetchone():
+    if conn.execute("SELECT id FROM project_paths WHERE path=?", (url_path,)).fetchone():
         flash("Fehler: Diese URL ist bereits vergeben.", "error")
         conn.close()
         return redirect(url_for('index'))
@@ -65,6 +79,7 @@ def create_project():
     cursor = conn.cursor()
     cursor.execute("INSERT INTO projects (path, project_dir) VALUES (?, ?)", (url_path, project_id))
     new_id = cursor.lastrowid
+    cursor.execute("INSERT INTO project_paths (project_id, path) VALUES (?, ?)", (new_id, url_path))
     conn.commit()
     conn.close()
     flash("Leeres Projekt erstellt! Du bist direkt im Editor.", "success")
@@ -81,7 +96,7 @@ def upload():
     if not url_path.endswith('/'): url_path += '/'
         
     conn = get_db_connection()
-    if conn.execute("SELECT id FROM projects WHERE path=?", (url_path,)).fetchone():
+    if conn.execute("SELECT id FROM project_paths WHERE path=?", (url_path,)).fetchone():
         flash("Fehler: Diese URL ist bereits vergeben.", "error")
         conn.close()
         return redirect(url_for('index'))
@@ -113,29 +128,67 @@ def upload():
             file.save(final_abs_path)
             file_count += 1
 
-    conn.execute("INSERT INTO projects (path, project_dir) VALUES (?, ?)", (url_path, project_id))
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO projects (path, project_dir) VALUES (?, ?)", (url_path, project_id))
+    new_id = cursor.lastrowid
+    cursor.execute("INSERT INTO project_paths (project_id, path) VALUES (?, ?)", (new_id, url_path))
     conn.commit()
     conn.close()
     flash(f"Projekt erfolgreich. {file_count} Dateien unter {url_path} gelaunched.", "success")
     return redirect(url_for('index'))
 
-@admin_app.route('/edit_url/<int:id>', methods=['POST'])
-def edit_url(id):
+@admin_app.route('/edit_url/<int:path_id>', methods=['POST'])
+def edit_url(path_id):
     new_url = request.form.get('new_url', '').strip()
     if not new_url:
         flash("Neue URL darf nicht leer sein.", "error")
         return redirect(url_for('index'))
-        
+
     if not new_url.startswith('/'): new_url = '/' + new_url
     if not new_url.endswith('/'): new_url += '/'
 
     conn = get_db_connection()
-    if conn.execute("SELECT id FROM projects WHERE path=? AND id!=?", (new_url, id)).fetchone():
+    if conn.execute("SELECT id FROM project_paths WHERE path=? AND id!=?", (new_url, path_id)).fetchone():
         flash("Diese URL ist bereits vergeben.", "error")
     else:
-        conn.execute("UPDATE projects SET path=? WHERE id=?", (new_url, id))
+        conn.execute("UPDATE project_paths SET path=? WHERE id=?", (new_url, path_id))
         conn.commit()
         flash("URL erfolgreich geändert.", "success")
+    conn.close()
+    return redirect(url_for('index'))
+
+@admin_app.route('/add_url/<int:id>', methods=['POST'])
+def add_url(id):
+    new_url = request.form.get('new_url', '').strip()
+    if not new_url:
+        flash("URL darf nicht leer sein.", "error")
+        return redirect(url_for('index'))
+
+    if not new_url.startswith('/'): new_url = '/' + new_url
+    if not new_url.endswith('/'): new_url += '/'
+
+    conn = get_db_connection()
+    if conn.execute("SELECT id FROM project_paths WHERE path=?", (new_url,)).fetchone():
+        flash("Diese URL ist bereits vergeben.", "error")
+    else:
+        conn.execute("INSERT INTO project_paths (project_id, path) VALUES (?, ?)", (id, new_url))
+        conn.commit()
+        flash(f"URL {new_url} hinzugefügt.", "success")
+    conn.close()
+    return redirect(url_for('index'))
+
+@admin_app.route('/remove_url/<int:path_id>', methods=['POST'])
+def remove_url(path_id):
+    conn = get_db_connection()
+    entry = conn.execute("SELECT project_id FROM project_paths WHERE id=?", (path_id,)).fetchone()
+    if entry:
+        count = conn.execute("SELECT COUNT(*) as c FROM project_paths WHERE project_id=?", (entry['project_id'],)).fetchone()['c']
+        if count <= 1:
+            flash("Letzte URL kann nicht entfernt werden. Lösche stattdessen das Projekt.", "error")
+        else:
+            conn.execute("DELETE FROM project_paths WHERE id=?", (path_id,))
+            conn.commit()
+            flash("URL entfernt.", "success")
     conn.close()
     return redirect(url_for('index'))
 
@@ -148,6 +201,7 @@ def delete_project(id):
         dir_path = os.path.join(UPLOAD_FOLDER, proj['project_dir'])
         if os.path.exists(dir_path):
             shutil.rmtree(dir_path)
+        c.execute("DELETE FROM project_paths WHERE project_id=?", (id,))
         c.execute("DELETE FROM projects WHERE id=?", (id,))
         conn.commit()
         flash("Projekt erfolgreich gelöscht.", "success")
@@ -232,13 +286,13 @@ def catch_all(req_path):
         search_path += '/'
 
     conn = get_db_connection()
-    routes = conn.execute("SELECT path, project_dir FROM projects").fetchall()
+    routes = conn.execute("SELECT pp.path, p.project_dir FROM project_paths pp JOIN projects p ON pp.project_id = p.id").fetchall()
     conn.close()
 
     matched_route = None
     matched_proj_dir = None
     max_len = 0
-    
+
     for row in routes:
         route_path = row['path']
         if search_path.startswith(route_path):

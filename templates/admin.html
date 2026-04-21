@@ -369,11 +369,16 @@
             <h2>Projektverwaltung</h2>
             <ul class="routes-list">
                 {% for row in routes %}
-                <li class="route-item" style="{{ 'opacity: 0.5;' if not row['active'] else '' }}">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <li class="route-item" style="{{ 'opacity: 0.45;' if row['active'] == 0 else 'opacity: 0.75;' if row['active'] == 2 else '' }}">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
                         <div class="route-path" style="margin-bottom: 0;">{{ row['paths'][0]['path'] if row['paths'] else 'Keine URL' }}</div>
-                        {% if not row['active'] %}
+                        {% if row['active'] == 0 %}
                         <span style="background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">Deaktiviert</span>
+                        {% elif row['active'] == 2 %}
+                        <span style="background: #FFF3E0; color: #E65100; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">Offline (nur Temp-Links)</span>
+                        {% endif %}
+                        {% if row['log_count_24h'] > 0 %}
+                        <span style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">{{ row['log_count_24h'] }} Zugriffe (24h)</span>
                         {% endif %}
                     </div>
                     <div class="action-links">
@@ -383,14 +388,25 @@
                                 style="font-size: 18px;">open_in_new</span></a>
                         {% endif %}
                         <a href="/files/{{ row['id'] }}" class="route-link"
-                            style="background:#E8DEF8;color:#1D192B">Dateien bearbeiten & anlegen <span
+                            style="background:#E8DEF8;color:#1D192B">Dateien <span
                                 class="material-symbols-outlined" style="font-size: 18px;">edit_document</span></a>
-                        <form action="/toggle/{{ row['id'] }}" method="post" style="margin:0;">
-                            <button type="submit" class="route-link" style="border:none; cursor:pointer; {{ 'background:#C4EED0; color:#0F5223;' if not row['active'] else 'background:#FFF3E0; color:#E65100;' }}">
-                                {{ 'Aktivieren' if not row['active'] else 'Deaktivieren' }}
-                                <span class="material-symbols-outlined" style="font-size: 18px;">{{ 'toggle_on' if not row['active'] else 'toggle_off' }}</span>
-                            </button>
-                        </form>
+                        <a href="/logs/{{ row['id'] }}" class="route-link"
+                            style="background:#E0F7FA;color:#006064">Logs <span
+                                class="material-symbols-outlined" style="font-size: 18px;">monitoring</span></a>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
+                                <input type="hidden" name="state" value="1">
+                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:#C4EED0; color:#0F5223; font-weight:700;' if row['active'] == 1 else 'background:#e8e8e8; color:#666;' }}">Aktiv</button>
+                            </form>
+                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
+                                <input type="hidden" name="state" value="2">
+                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:#FFF3E0; color:#E65100; font-weight:700;' if row['active'] == 2 else 'background:#e8e8e8; color:#666;' }}">Offline</button>
+                            </form>
+                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
+                                <input type="hidden" name="state" value="0">
+                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:var(--md-sys-color-error-container); color:var(--md-sys-color-on-error-container); font-weight:700;' if row['active'] == 0 else 'background:#e8e8e8; color:#666;' }}">Aus</button>
+                            </form>
+                        </div>
                         <form action="/delete/{{ row['id'] }}" method="post" style="margin:0;"
                             onsubmit="return confirm('Wirklich löschen?');">
                             <button type="submit" class="route-link danger" style="border:none; cursor:pointer;">Löschen

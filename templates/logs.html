@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zugriffslogs - {{ project_name }} | HELA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        :root {
+            --md-sys-color-background: #FDFBFF;
+            --md-sys-color-on-background: #1A1B1F;
+            --md-sys-color-surface: #FDFBFF;
+            --md-sys-color-surface-container: #F2EDF7;
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-outline: #79747E;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .top-app-bar {
+            width: 100%;
+            height: 64px;
+            background-color: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 12px;
+        }
+
+        .top-app-bar a {
+            text-decoration: none;
+            color: var(--md-sys-color-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .top-app-bar h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1100px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: 28px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            background: var(--md-sys-color-primary-container);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 2px solid var(--md-sys-color-outline);
+            font-weight: 500;
+            color: var(--md-sys-color-outline);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+        }
+
+        tr:hover td {
+            background: rgba(103, 80, 164, 0.04);
+        }
+
+        .ua-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-normal { background: #C4EED0; color: #0F5223; }
+        .badge-temp { background: #FFF3E0; color: #E65100; }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .pagination a, .pagination span {
+            padding: 8px 16px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .pagination a {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-primary);
+        }
+
+        .pagination a:hover { opacity: 0.8; }
+
+        .pagination .current {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 48px;
+            color: var(--md-sys-color-outline);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-app-bar">
+        <a href="/"><span class="material-symbols-outlined">arrow_back</span></a>
+        <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 28px;">monitoring</span>
+        <h1>Zugriffslogs: {{ project_name }}</h1>
+    </div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="stats">
+                <div class="stat-chip">{{ total }} Zugriffe gesamt</div>
+            </div>
+
+            {% if logs %}
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Zeitpunkt</th>
+                            <th>IP</th>
+                            <th>Pfad</th>
+                            <th>Zugang</th>
+                            <th>User-Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td style="white-space: nowrap;">{{ log['timestamp'] }}</td>
+                            <td><code>{{ log['ip'] }}</code></td>
+                            <td><code>{{ log['path'] }}</code></td>
+                            <td>
+                                {% if log['via_temp_link'] %}
+                                <span class="badge badge-temp">Temp: {{ log['temp_link_token'] }}</span>
+                                {% else %}
+                                <span class="badge badge-normal">URL</span>
+                                {% endif %}
+                            </td>
+                            <td class="ua-cell" title="{{ log['user_agent'] }}">{{ log['user_agent'][:80] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if total_pages > 1 %}
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="?page={{ page - 1 }}">Zurück</a>
+                {% endif %}
+                <span class="current">Seite {{ page }} / {{ total_pages }}</span>
+                {% if page < total_pages %}
+                <a href="?page={{ page + 1 }}">Weiter</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty">
+                <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 12px;">monitoring</span>
+                <p>Noch keine Zugriffe aufgezeichnet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

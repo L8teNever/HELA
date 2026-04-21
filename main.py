@@ -19,6 +19,11 @@ UPLOAD_FOLDER = os.path.join(DATA_DIR, 'uploaded_html')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, 'hela.db')
 
+# Project states: 1=Active, 2=Offline (only temp links), 0=Deactivated
+STATE_ACTIVE = 1
+STATE_OFFLINE = 2
+STATE_DEACTIVATED = 0
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -38,6 +43,12 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id INTEGER NOT NULL, device_hash TEXT,
                   first_seen TEXT,
                   FOREIGN KEY (link_id) REFERENCES temp_links(id) ON DELETE CASCADE)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS access_logs
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL,
+                  timestamp TEXT NOT NULL, ip TEXT, user_agent TEXT, path TEXT,
+                  via_temp_link INTEGER DEFAULT 0, temp_link_token TEXT,
+                  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    c.execute("CREATE INDEX IF NOT EXISTS idx_access_logs_project_time ON access_logs (project_id, timestamp)")
     # Migrate: add active column if missing
     cols = [row[1] for row in c.execute("PRAGMA table_info(projects)").fetchall()]
     if 'active' not in cols:
@@ -65,12 +76,29 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def log_access(project_id, path, via_temp_link=False, temp_link_token=None):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            "INSERT INTO access_logs (project_id, timestamp, ip, user_agent, path, via_temp_link, temp_link_token) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (project_id, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+             request.remote_addr, request.headers.get('User-Agent', ''),
+             path, 1 if via_temp_link else 0, temp_link_token)
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+STATE_LABELS = {STATE_ACTIVE: 'Aktiv', STATE_OFFLINE: 'Offline', STATE_DEACTIVATED: 'Deaktiviert'}
+
 # --- ADMIN APP ---
 @admin_app.route('/', methods=['GET'])
 def index():
     conn = get_db_connection()
     projects = conn.execute("SELECT id, project_dir, active FROM projects ORDER BY id DESC").fetchall()
     routes = []
+    now_24h = (datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
     for proj in projects:
         paths = conn.execute("SELECT id, path FROM project_paths WHERE project_id=? ORDER BY id", (proj['id'],)).fetchall()
         links = conn.execute("SELECT * FROM temp_links WHERE project_id=? ORDER BY id DESC", (proj['id'],)).fetchall()
@@ -79,10 +107,11 @@ def index():
             ld = dict(l)
             ld['device_count'] = conn.execute("SELECT COUNT(*) as c FROM temp_link_devices WHERE link_id=?", (l['id'],)).fetchone()['c']
             temp_links.append(ld)
+        log_count = conn.execute("SELECT COUNT(*) as c FROM access_logs WHERE project_id=? AND timestamp > ?", (proj['id'], now_24h)).fetchone()['c']
         routes.append({
             'id': proj['id'], 'project_dir': proj['project_dir'], 'active': proj['active'],
             'paths': [{'id': p['id'], 'path': p['path']} for p in paths],
-            'temp_links': temp_links
+            'temp_links': temp_links, 'log_count_24h': log_count
         })
     conn.close()
     return render_template('admin.html', routes=routes)
@@ -93,10 +122,10 @@ def create_project():
     if not url_path:
         flash("Fehler: URL-Pfad darf nicht leer sein.", "error")
         return redirect(url_for('index'))
-    
+
     if not url_path.startswith('/'): url_path = '/' + url_path
     if not url_path.endswith('/'): url_path += '/'
-        
+
     conn = get_db_connection()
     if conn.execute("SELECT id FROM project_paths WHERE path=?", (url_path,)).fetchone():
         flash("Fehler: Diese URL ist bereits vergeben.", "error")
@@ -126,10 +155,10 @@ def upload():
     if not url_path:
         flash("Fehler: URL-Pfad darf nicht leer sein.", "error")
         return redirect(url_for('index'))
-    
+
     if not url_path.startswith('/'): url_path = '/' + url_path
     if not url_path.endswith('/'): url_path += '/'
-        
+
     conn = get_db_connection()
     if conn.execute("SELECT id FROM project_paths WHERE path=?", (url_path,)).fetchone():
         flash("Fehler: Diese URL ist bereits vergeben.", "error")
@@ -152,13 +181,13 @@ def upload():
             safe_rel_path = file.filename.replace('\\', '/').lstrip('/')
             parts = [p for p in safe_rel_path.split('/') if p and p not in ('.', '..')]
             if not parts: continue
-            
+
             if len(files) > 1 and len(parts) > 1:
                 parts = parts[1:]
-                
+
             final_rel_path = os.path.join(*parts) if parts else 'index.html'
             final_abs_path = os.path.join(project_dir, final_rel_path)
-            
+
             os.makedirs(os.path.dirname(final_abs_path), exist_ok=True)
             file.save(final_abs_path)
             file_count += 1
@@ -227,16 +256,17 @@ def remove_url(path_id):
     conn.close()
     return redirect(url_for('index'))
 
-@admin_app.route('/toggle/<int:id>', methods=['POST'])
-def toggle_project(id):
+@admin_app.route('/set_state/<int:id>', methods=['POST'])
+def set_state(id):
+    state = request.form.get('state', '1')
+    state = int(state)
+    if state not in (STATE_ACTIVE, STATE_OFFLINE, STATE_DEACTIVATED):
+        state = STATE_ACTIVE
     conn = get_db_connection()
-    proj = conn.execute("SELECT active FROM projects WHERE id=?", (id,)).fetchone()
-    if proj:
-        new_state = 0 if proj['active'] else 1
-        conn.execute("UPDATE projects SET active=? WHERE id=?", (new_state, id))
-        conn.commit()
-        flash("Projekt aktiviert." if new_state else "Projekt deaktiviert.", "success")
+    conn.execute("UPDATE projects SET active=? WHERE id=?", (state, id))
+    conn.commit()
     conn.close()
+    flash(f"Projekt-Status: {STATE_LABELS[state]}", "success")
     return redirect(url_for('index'))
 
 @admin_app.route('/create_temp_link/<int:id>', methods=['POST'])
@@ -288,6 +318,7 @@ def delete_project(id):
         link_ids = [r['id'] for r in c.execute("SELECT id FROM temp_links WHERE project_id=?", (id,)).fetchall()]
         for lid in link_ids:
             c.execute("DELETE FROM temp_link_devices WHERE link_id=?", (lid,))
+        c.execute("DELETE FROM access_logs WHERE project_id=?", (id,))
         c.execute("DELETE FROM temp_links WHERE project_id=?", (id,))
         c.execute("DELETE FROM project_paths WHERE project_id=?", (id,))
         c.execute("DELETE FROM projects WHERE id=?", (id,))
@@ -296,13 +327,34 @@ def delete_project(id):
     conn.close()
     return redirect(url_for('index'))
 
+@admin_app.route('/logs/<int:id>')
+def view_logs(id):
+    conn = get_db_connection()
+    proj = conn.execute("SELECT * FROM projects WHERE id=?", (id,)).fetchone()
+    if not proj:
+        conn.close()
+        abort(404)
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    offset = (page - 1) * per_page
+    total = conn.execute("SELECT COUNT(*) as c FROM access_logs WHERE project_id=?", (id,)).fetchone()['c']
+    logs = conn.execute(
+        "SELECT * FROM access_logs WHERE project_id=? ORDER BY id DESC LIMIT ? OFFSET ?",
+        (id, per_page, offset)
+    ).fetchall()
+    paths = conn.execute("SELECT path FROM project_paths WHERE project_id=? ORDER BY id LIMIT 1", (id,)).fetchone()
+    project_name = paths['path'] if paths else f"Projekt #{id}"
+    conn.close()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    return render_template('logs.html', project=proj, project_name=project_name, logs=logs, page=page, total=total, total_pages=total_pages)
+
 @admin_app.route('/files/<int:id>', methods=['GET'])
 def file_manager(id):
     conn = get_db_connection()
     proj = conn.execute("SELECT * FROM projects WHERE id=?", (id,)).fetchone()
     conn.close()
     if not proj: abort(404)
-        
+
     project_dir = os.path.join(UPLOAD_FOLDER, proj['project_dir'])
     file_list = []
     if os.path.exists(project_dir):
@@ -320,49 +372,48 @@ def create_file(id):
     if not file_name or '..' in file_name:
         flash("Ungültiger Dateiname.", "error")
         return redirect(url_for('file_manager', id=id))
-        
+
     conn = get_db_connection()
     proj = conn.execute("SELECT * FROM projects WHERE id=?", (id,)).fetchone()
     conn.close()
     if not proj: abort(404)
-        
+
     abs_path = os.path.join(UPLOAD_FOLDER, proj['project_dir'], file_name)
     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    
+
     if not os.path.exists(abs_path):
         open(abs_path, 'a').close()
         flash(f"Datei '{file_name}' wurde erstellt.", "success")
-        
+
     return redirect(url_for('edit_file', id=id, file=file_name))
 
 @admin_app.route('/edit_file/<int:id>', methods=['GET', 'POST'])
 def edit_file(id):
     file_path = request.args.get('file', '')
     if not file_path or '..' in file_path: abort(400)
-    
+
     conn = get_db_connection()
     proj = conn.execute("SELECT * FROM projects WHERE id=?", (id,)).fetchone()
     conn.close()
     if not proj: abort(404)
-        
+
     abs_path = os.path.join(UPLOAD_FOLDER, proj['project_dir'], file_path)
     if not os.path.exists(abs_path): abort(404)
-        
+
     if request.method == 'POST':
         content = request.form.get('content', '')
         with open(abs_path, 'w', encoding='utf-8') as f:
             f.write(content)
         flash("Datei erfolgreich gespeichert.", "success")
         return redirect(url_for('file_manager', id=id))
-        
-    # Read text content safely
+
     try:
         with open(abs_path, 'r', encoding='utf-8') as f:
             content = f.read()
     except UnicodeDecodeError:
         flash("Binärdateien können nicht direkt bearbeitet werden.", "error")
         return redirect(url_for('file_manager', id=id))
-        
+
     return render_template('editor.html', project=proj, file_path=file_path, content=content)
 
 # --- HOST APP ---
@@ -374,11 +425,12 @@ def catch_all(req_path):
         search_path += '/'
 
     conn = get_db_connection()
-    routes = conn.execute("SELECT pp.path, p.project_dir FROM project_paths pp JOIN projects p ON pp.project_id = p.id WHERE p.active = 1").fetchall()
+    routes = conn.execute("SELECT pp.path, p.project_dir, p.id as project_id FROM project_paths pp JOIN projects p ON pp.project_id = p.id WHERE p.active = 1").fetchall()
     conn.close()
 
     matched_route = None
     matched_proj_dir = None
+    matched_project_id = None
     max_len = 0
 
     for row in routes:
@@ -388,12 +440,14 @@ def catch_all(req_path):
                 max_len = len(route_path)
                 matched_route = route_path
                 matched_proj_dir = row['project_dir']
-                
+                matched_project_id = row['project_id']
+
     if matched_route and matched_proj_dir:
         subpath = search_path[len(matched_route):]
         if not subpath: subpath = 'index.html'
         elif subpath.endswith('/'): subpath += 'index.html'
-            
+
+        log_access(matched_project_id, req_path)
         proj_abs_dir = os.path.join(UPLOAD_FOLDER, matched_proj_dir)
         return send_from_directory(proj_abs_dir, subpath)
 
@@ -403,8 +457,13 @@ def catch_all(req_path):
 @host_app.route('/t/<token>/<path:subpath>')
 def temp_link(token, subpath='index.html'):
     conn = get_db_connection()
-    link = conn.execute("SELECT tl.*, p.project_dir FROM temp_links tl JOIN projects p ON tl.project_id = p.id WHERE tl.token=?", (token,)).fetchone()
+    link = conn.execute("SELECT tl.*, p.project_dir, p.active FROM temp_links tl JOIN projects p ON tl.project_id = p.id WHERE tl.token=?", (token,)).fetchone()
     if not link:
+        conn.close()
+        abort(404)
+
+    # Deactivated projects block everything including temp links
+    if link['active'] == STATE_DEACTIVATED:
         conn.close()
         abort(404)
 
@@ -433,7 +492,7 @@ def temp_link(token, subpath='index.html'):
         abort(404)
 
     # Check max unique devices (IP + User-Agent hash)
-    device_hash = hashlib.sha256((request.remote_addr or '' + '|' + request.headers.get('User-Agent', '')).encode()).hexdigest()[:16]
+    device_hash = hashlib.sha256(((request.remote_addr or '') + '|' + request.headers.get('User-Agent', '')).encode()).hexdigest()[:16]
     if link['max_devices']:
         existing_device = conn.execute("SELECT id FROM temp_link_devices WHERE link_id=? AND device_hash=?", (link['id'], device_hash)).fetchone()
         if not existing_device:
@@ -443,7 +502,6 @@ def temp_link(token, subpath='index.html'):
                 abort(404)
             conn.execute("INSERT INTO temp_link_devices (link_id, device_hash, first_seen) VALUES (?, ?, ?)", (link['id'], device_hash, now_str))
     else:
-        # Track device even without limit (for stats)
         existing_device = conn.execute("SELECT id FROM temp_link_devices WHERE link_id=? AND device_hash=?", (link['id'], device_hash)).fetchone()
         if not existing_device:
             conn.execute("INSERT INTO temp_link_devices (link_id, device_hash, first_seen) VALUES (?, ?, ?)", (link['id'], device_hash, now_str))
@@ -455,6 +513,8 @@ def temp_link(token, subpath='index.html'):
     conn.execute("UPDATE temp_links SET use_count = use_count + 1 WHERE id=?", (link['id'],))
     conn.commit()
     conn.close()
+
+    log_access(link['project_id'], subpath, via_temp_link=True, temp_link_token=token)
 
     proj_abs_dir = os.path.join(UPLOAD_FOLDER, link['project_dir'])
     if not subpath or subpath.endswith('/'):

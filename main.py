@@ -3,6 +3,7 @@ import os
 import sqlite3
 import uuid
 import shutil
+from datetime import datetime, timedelta
 from flask import Flask, request, render_template, abort, redirect, url_for, flash, send_from_directory
 
 admin_app = Flask("admin_app", template_folder="templates")
@@ -21,10 +22,19 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS projects
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, project_dir TEXT)''')
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, project_dir TEXT, active INTEGER DEFAULT 1)''')
     c.execute('''CREATE TABLE IF NOT EXISTS project_paths
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, path TEXT UNIQUE,
                   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS temp_links
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, token TEXT UNIQUE,
+                  max_uses INTEGER, use_count INTEGER DEFAULT 0,
+                  valid_from TEXT, valid_until TEXT, created_at TEXT,
+                  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    # Migrate: add active column if missing
+    cols = [row[1] for row in c.execute("PRAGMA table_info(projects)").fetchall()]
+    if 'active' not in cols:
+        c.execute("ALTER TABLE projects ADD COLUMN active INTEGER DEFAULT 1")
     # Migrate: if projects have paths not yet in project_paths, copy them over
     existing = c.execute("SELECT id, path FROM projects WHERE path IS NOT NULL AND path != ''").fetchall()
     for row in existing:
@@ -44,11 +54,16 @@ def get_db_connection():
 @admin_app.route('/', methods=['GET'])
 def index():
     conn = get_db_connection()
-    projects = conn.execute("SELECT id, project_dir FROM projects ORDER BY id DESC").fetchall()
+    projects = conn.execute("SELECT id, project_dir, active FROM projects ORDER BY id DESC").fetchall()
     routes = []
     for proj in projects:
         paths = conn.execute("SELECT id, path FROM project_paths WHERE project_id=? ORDER BY id", (proj['id'],)).fetchall()
-        routes.append({'id': proj['id'], 'project_dir': proj['project_dir'], 'paths': [{'id': p['id'], 'path': p['path']} for p in paths]})
+        links = conn.execute("SELECT id, token, max_uses, use_count, valid_from, valid_until FROM temp_links WHERE project_id=? ORDER BY id DESC", (proj['id'],)).fetchall()
+        routes.append({
+            'id': proj['id'], 'project_dir': proj['project_dir'], 'active': proj['active'],
+            'paths': [{'id': p['id'], 'path': p['path']} for p in paths],
+            'temp_links': [dict(l) for l in links]
+        })
     conn.close()
     return render_template('admin.html', routes=routes)
 
@@ -192,6 +207,51 @@ def remove_url(path_id):
     conn.close()
     return redirect(url_for('index'))
 
+@admin_app.route('/toggle/<int:id>', methods=['POST'])
+def toggle_project(id):
+    conn = get_db_connection()
+    proj = conn.execute("SELECT active FROM projects WHERE id=?", (id,)).fetchone()
+    if proj:
+        new_state = 0 if proj['active'] else 1
+        conn.execute("UPDATE projects SET active=? WHERE id=?", (new_state, id))
+        conn.commit()
+        flash("Projekt aktiviert." if new_state else "Projekt deaktiviert.", "success")
+    conn.close()
+    return redirect(url_for('index'))
+
+@admin_app.route('/create_temp_link/<int:id>', methods=['POST'])
+def create_temp_link(id):
+    max_uses = request.form.get('max_uses', '').strip()
+    valid_from = request.form.get('valid_from', '').strip()
+    valid_until = request.form.get('valid_until', '').strip()
+    duration = request.form.get('duration', '').strip()
+
+    token = str(uuid.uuid4())[:12]
+    now = datetime.utcnow()
+
+    if duration:
+        hours = int(duration)
+        valid_until = (now + timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO temp_links (project_id, token, max_uses, valid_from, valid_until, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (id, token, int(max_uses) if max_uses else None, valid_from or None, valid_until or None, now.strftime('%Y-%m-%d %H:%M:%S'))
+    )
+    conn.commit()
+    conn.close()
+    flash(f"Temporärer Link erstellt: /t/{token}", "success")
+    return redirect(url_for('index'))
+
+@admin_app.route('/delete_temp_link/<int:link_id>', methods=['POST'])
+def delete_temp_link(link_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM temp_links WHERE id=?", (link_id,))
+    conn.commit()
+    conn.close()
+    flash("Temporärer Link gelöscht.", "success")
+    return redirect(url_for('index'))
+
 @admin_app.route('/delete/<int:id>', methods=['POST'])
 def delete_project(id):
     conn = get_db_connection()
@@ -201,6 +261,7 @@ def delete_project(id):
         dir_path = os.path.join(UPLOAD_FOLDER, proj['project_dir'])
         if os.path.exists(dir_path):
             shutil.rmtree(dir_path)
+        c.execute("DELETE FROM temp_links WHERE project_id=?", (id,))
         c.execute("DELETE FROM project_paths WHERE project_id=?", (id,))
         c.execute("DELETE FROM projects WHERE id=?", (id,))
         conn.commit()
@@ -286,7 +347,7 @@ def catch_all(req_path):
         search_path += '/'
 
     conn = get_db_connection()
-    routes = conn.execute("SELECT pp.path, p.project_dir FROM project_paths pp JOIN projects p ON pp.project_id = p.id").fetchall()
+    routes = conn.execute("SELECT pp.path, p.project_dir FROM project_paths pp JOIN projects p ON pp.project_id = p.id WHERE p.active = 1").fetchall()
     conn.close()
 
     matched_route = None
@@ -310,6 +371,35 @@ def catch_all(req_path):
         return send_from_directory(proj_abs_dir, subpath)
 
     abort(404)
+
+@host_app.route('/t/<token>')
+@host_app.route('/t/<token>/<path:subpath>')
+def temp_link(token, subpath='index.html'):
+    conn = get_db_connection()
+    link = conn.execute("SELECT tl.*, p.project_dir FROM temp_links tl JOIN projects p ON tl.project_id = p.id WHERE tl.token=?", (token,)).fetchone()
+    if not link:
+        conn.close()
+        abort(404)
+
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    if link['valid_from'] and now < link['valid_from']:
+        conn.close()
+        abort(404)
+    if link['valid_until'] and now > link['valid_until']:
+        conn.close()
+        abort(404)
+    if link['max_uses'] and link['use_count'] >= link['max_uses']:
+        conn.close()
+        abort(404)
+
+    conn.execute("UPDATE temp_links SET use_count = use_count + 1 WHERE id=?", (link['id'],))
+    conn.commit()
+    conn.close()
+
+    proj_abs_dir = os.path.join(UPLOAD_FOLDER, link['project_dir'])
+    if not subpath or subpath.endswith('/'):
+        subpath = (subpath or '') + 'index.html'
+    return send_from_directory(proj_abs_dir, subpath)
 
 @host_app.errorhandler(404)
 def page_not_found(e):

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Editor - {{ file_path }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        :root {
+            --md-sys-color-background: #FDFBFF;
+            --md-sys-color-surface: #FDFBFF;
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-background: #1A1B1F;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-sys-color-background);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .top-app-bar {
+            width: 100%;
+            height: 64px;
+            background: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1000px;
+            padding: 24px;
+            box-sizing: border-box;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .editor-textarea {
+            flex-grow: 1;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            font-family: 'Consolas', monospace;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            background: #1E1E1E;
+            color: #D4D4D4;
+            box-sizing: border-box;
+        }
+
+        .btn-save {
+            background: var(--md-sys-color-primary);
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            align-self: flex-end;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-app-bar">
+        <a href="/files/{{ project['id'] }}"
+            style="text-decoration:none; display:flex; align-items:center; color: var(--md-sys-color-on-background); margin-right: 16px;">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <h1 style="font-size:20px; font-weight:500; margin:0;">Editing: {{ file_path }}</h1>
+    </div>
+
+    <div class="main-content">
+        <form action="" method="post" style="display:flex; flex-direction:column; flex-grow:1;">
+            <div class="editor-container">
+                <!-- Using a dark theme for the code editor area natively -->
+                <textarea name="content" class="editor-textarea" spellcheck="false" required>{{ content }}</textarea>
+            </div>
+            <button type="submit" class="btn-save">
+                <span class="material-symbols-outlined">save</span>
+                Speichern
+            </button>
+        </form>
+    </div>
+</body>
+
+</html>

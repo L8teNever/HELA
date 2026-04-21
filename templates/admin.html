@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELA - Hypertext Efficient Launching Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        :root {
+            --md-sys-color-background: #FDFBFF;
+            --md-sys-color-on-background: #1A1B1F;
+            --md-sys-color-surface: #FDFBFF;
+            --md-sys-color-surface-container: #F2EDF7;
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            --md-sys-color-error: #B3261E;
+            --md-sys-color-error-container: #F9DEDC;
+            --md-sys-color-on-error-container: #410E0B;
+            --md-sys-color-outline: #79747E;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .top-app-bar {
+            width: 100%;
+            height: 64px;
+            background-color: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-app-bar h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin: 0 0 0 16px;
+            color: var(--md-sys-color-on-background);
+            flex-grow: 1;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 900px;
+            padding: 24px;
+            box-sizing: border-box;
+            animation: fadein 0.5s ease-out;
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: 28px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-top: 0;
+            margin-bottom: 32px;
+            color: var(--md-sys-color-on-background);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: transparent;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            color: var(--md-sys-color-on-background);
+            outline: none;
+            transition: border-color 0.2s, padding 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            padding: 15px;
+        }
+
+        .input-label {
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            background-color: var(--md-sys-color-surface-container);
+            padding: 0 4px;
+            font-size: 12px;
+            color: var(--md-sys-color-primary);
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 18px;
+            border-radius: 12px;
+            border: 2px dashed var(--md-sys-color-outline);
+            background-color: transparent;
+            color: var(--md-sys-color-primary);
+            font-weight: 500;
+            font-size: 16px;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .file-upload-wrapper:hover .file-upload-btn {
+            background-color: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .btn-filled {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 100px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            transition: opacity 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-filled:hover {
+            opacity: 0.9;
+        }
+
+        .routes-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .route-item {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--md-sys-color-surface);
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .route-path {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-background);
+            margin-bottom: 16px;
+        }
+
+        .action-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .route-link {
+            text-decoration: none;
+            color: var(--md-sys-color-primary);
+            background-color: var(--md-sys-color-primary-container);
+            padding: 8px 16px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .route-link:hover {
+            opacity: 0.8;
+        }
+
+        .route-link.danger {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .url-editor {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #f7f2fb;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .url-editor input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .flash-messages {
+            margin-bottom: 24px;
+        }
+
+        .flash-message {
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background-color: #C4EED0;
+            color: #0F5223;
+        }
+
+        .flash-error {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .split-layout {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .split-layout>.card {
+            flex: 1;
+            min-width: 350px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-app-bar">
+        <span class="material-symbols-outlined"
+            style="color: var(--md-sys-color-primary); font-size: 32px;">rocket_launch</span>
+        <h1>HELA Admin</h1>
+    </div>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                <span class="material-symbols-outlined">{{ 'check_circle' if category == 'success' else 'error'
+                    }}</span>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="split-layout">
+            <!-- LEERES PROJEKT ERSTELLEN -->
+            <div class="card">
+                <h2 style="font-size: 20px;">Leeres Projekt erstellen</h2>
+                <p style="margin-bottom:24px; font-size:14px; color:#49454f;">Code deine Seite direkt über den
+                    Dateimanager im Browser.</p>
+                <form action="/create_project" method="post">
+                    <div class="input-group">
+                        <label class="input-label"
+                            style="background:var(--md-sys-color-surface-container)">Basis-URL</label>
+                        <input type="text" name="url_path" class="input-field" placeholder="/mein-projekt/" required>
+                    </div>
+                    <button type="submit" class="btn-filled" style="width:100%;">
+                        <span class="material-symbols-outlined">add_circle</span> Manuell erstellen
+                    </button>
+                </form>
+            </div>
+
+            <!-- ORDNER HOCHLADEN -->
+            <div class="card">
+                <h2 style="font-size: 20px;">Vorhandenes Projekt hochladen</h2>
+                <p style="margin-bottom:24px; font-size:14px; color:#49454f;">Lade fertige Ordner von deinem PC hoch.
+                </p>
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <label class="input-label"
+                            style="background:var(--md-sys-color-surface-container)">Basis-URL</label>
+                        <input type="text" name="url_path" class="input-field" placeholder="/upload-projekt/" required>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 12px;">
+                        <div class="file-upload-wrapper">
+                            <button type="button" class="file-upload-btn">
+                                <span class="material-symbols-outlined">upload_file</span> Ordner auswählen
+                            </button>
+                            <input type="file" name="site_files" class="file-upload-input" webkitdirectory directory
+                                multiple required id="file-input">
+                        </div>
+                        <div id="file-name-display" style="text-align:center; font-size:12px; margin-top:8px;"></div>
+                    </div>
+                    <button type="submit" class="btn-filled" style="width:100%;">
+                        <span class="material-symbols-outlined">publish</span> Upload
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Projektverwaltung</h2>
+            <ul class="routes-list">
+                {% for row in routes %}
+                <li class="route-item">
+                    <div class="route-path">{{ row['path'] }}</div>
+                    <div class="action-links">
+                        <a href="http://{{ request.host.split(':')[0] }}:8080{{ row['path'] }}" target="_blank"
+                            class="route-link">Ansehen <span class="material-symbols-outlined"
+                                style="font-size: 18px;">open_in_new</span></a>
+                        <a href="/files/{{ row['id'] }}" class="route-link"
+                            style="background:#E8DEF8;color:#1D192B">Dateien bearbeiten & anlegen <span
+                                class="material-symbols-outlined" style="font-size: 18px;">edit_document</span></a>
+                        <form action="/delete/{{ row['id'] }}" method="post" style="margin:0;"
+                            onsubmit="return confirm('Wirklich löschen?');">
+                            <button type="submit" class="route-link danger" style="border:none; cursor:pointer;">Löschen
+                                <span class="material-symbols-outlined" style="font-size: 18px;">delete</span></button>
+                        </form>
+                    </div>
+                    <form action="/edit_url/{{ row['id'] }}" method="post" class="url-editor">
+                        <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">link</span>
+                        <input type="text" name="new_url" value="{{ row['path'] }}" required>
+                        <button type="submit" class="btn-filled" style="padding: 8px 16px;">URL Ändern</button>
+                    </form>
+                </li>
+                {% else %}
+                <li style="color: #49454F; text-align: center; padding: 16px 0;">Noch keine Projekte gelaunched. Klicke
+                    links auf "Manuell erstellen" oder lade Ordner hoch!</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <script>
+        document.getElementById('file-input').addEventListener('change', function (e) {
+            var files = e.target.files;
+            var display = document.getElementById('file-name-display');
+            if (files && files.length > 0) { display.textContent = files.length + " Dateien ausgewählt."; display.style.color = "var(--md-sys-color-primary)"; } else { display.textContent = ""; }
+        });
+    </script>
+</body>
+
+</html>

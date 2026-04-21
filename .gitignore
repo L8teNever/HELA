@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+hela.db
+uploaded_html/
+.env

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dateien - {{ project['path'] }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        :root {
+            --md-sys-color-background: #FDFBFF;
+            --md-sys-color-surface: #FDFBFF;
+            --md-sys-color-surface-container: #F2EDF7;
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-background: #1A1B1F;
+            --md-sys-color-outline: #79747E;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-sys-color-background);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-app-bar {
+            width: 100%;
+            height: 64px;
+            background: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 800px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #e1dced;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-name {
+            font-family: monospace;
+            font-size: 16px;
+            color: var(--md-sys-color-on-background);
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-edit {
+            background: var(--md-sys-color-primary);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 100px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-edit:hover {
+            opacity: 0.9;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: transparent;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            color: var(--md-sys-color-on-background);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            padding: 15px;
+        }
+
+        .input-label {
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            background-color: var(--md-sys-color-surface-container);
+            padding: 0 4px;
+            font-size: 12px;
+            color: var(--md-sys-color-primary);
+        }
+
+        .flash-messages {
+            margin-bottom: 24px;
+        }
+
+        .flash-message {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flash-success {
+            background-color: #C4EED0;
+            color: #0F5223;
+        }
+
+        .flash-error {
+            background-color: #F9DEDC;
+            color: #410E0B;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-app-bar">
+        <a href="/"
+            style="text-decoration:none; display:flex; align-items:center; color: var(--md-sys-color-on-background); margin-right: 16px;">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <h1 style="font-size:22px; margin:0; font-weight:500; color:var(--md-sys-color-on-background);">Projektdateien:
+            {{ project['path'] }}</h1>
+    </div>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                <span class="material-symbols-outlined">info</span>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h2 style="margin-top:0; margin-bottom:24px; font-size:20px; font-weight:500;">Neue Datei anlegen</h2>
+            <form action="/create_file/{{ project['id'] }}" method="post"
+                style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                <div class="input-group" style="margin:0; flex-grow:1; min-width:300px;">
+                    <label class="input-label">Dateiname oder Ordnerpfad (z.B. css/styles.css)</label>
+                    <input type="text" name="file_name" class="input-field" placeholder="neue-datei.html" required>
+                </div>
+                <button type="submit" class="btn-edit" style="padding: 16px 24px; font-size:16px;">
+                    <span class="material-symbols-outlined">note_add</span> Erstellen
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0; font-size:20px; font-weight:500;">Aktuelle Dateien im Projekt</h2>
+            <ul class="file-list">
+                {% for file in files %}
+                <li class="file-item">
+                    <span class="file-name"><span class="material-symbols-outlined"
+                            style="margin-right:8px; color:#6750A4;">description</span>{{ file }}</span>
+                    <a href="/edit_file/{{ project['id'] }}?file={{ file|urlencode }}" class="btn-edit">
+                        Bearbeiten <span class="material-symbols-outlined" style="font-size:16px;">edit_document</span>
+                    </a>
+                </li>
+                {% else %}
+                <div style="padding: 16px; text-align:center; color:#49454F;">Keine Dateien gefunden.</div>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

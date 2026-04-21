@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+hela.db
+uploaded_html/
+.git/
+.gitignore
+.dockerignore
+docker-compose.yml
+.github/

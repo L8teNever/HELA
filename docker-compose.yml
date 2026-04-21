@@ -1,0 +1,13 @@
+services:
+  hela:
+    image: ghcr.io/l8tenever/hela:latest
+    container_name: hela
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+    volumes:
+      - hela-data:/app/uploaded_html
+
+volumes:
+  hela-data:

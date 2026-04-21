@@ -1,3 +1,4 @@
+import hashlib
 import threading
 import os
 import sqlite3
@@ -29,12 +30,26 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS temp_links
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, token TEXT UNIQUE,
                   max_uses INTEGER, use_count INTEGER DEFAULT 0,
+                  max_devices INTEGER, expires_after_hours INTEGER,
+                  first_used_at TEXT,
                   valid_from TEXT, valid_until TEXT, created_at TEXT,
                   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS temp_link_devices
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, link_id INTEGER NOT NULL, device_hash TEXT,
+                  first_seen TEXT,
+                  FOREIGN KEY (link_id) REFERENCES temp_links(id) ON DELETE CASCADE)''')
     # Migrate: add active column if missing
     cols = [row[1] for row in c.execute("PRAGMA table_info(projects)").fetchall()]
     if 'active' not in cols:
         c.execute("ALTER TABLE projects ADD COLUMN active INTEGER DEFAULT 1")
+    # Migrate: add new temp_links columns if missing
+    tl_cols = [row[1] for row in c.execute("PRAGMA table_info(temp_links)").fetchall()]
+    if 'max_devices' not in tl_cols:
+        c.execute("ALTER TABLE temp_links ADD COLUMN max_devices INTEGER")
+    if 'expires_after_hours' not in tl_cols:
+        c.execute("ALTER TABLE temp_links ADD COLUMN expires_after_hours INTEGER")
+    if 'first_used_at' not in tl_cols:
+        c.execute("ALTER TABLE temp_links ADD COLUMN first_used_at TEXT")
     # Migrate: if projects have paths not yet in project_paths, copy them over
     existing = c.execute("SELECT id, path FROM projects WHERE path IS NOT NULL AND path != ''").fetchall()
     for row in existing:
@@ -58,11 +73,16 @@ def index():
     routes = []
     for proj in projects:
         paths = conn.execute("SELECT id, path FROM project_paths WHERE project_id=? ORDER BY id", (proj['id'],)).fetchall()
-        links = conn.execute("SELECT id, token, max_uses, use_count, valid_from, valid_until FROM temp_links WHERE project_id=? ORDER BY id DESC", (proj['id'],)).fetchall()
+        links = conn.execute("SELECT * FROM temp_links WHERE project_id=? ORDER BY id DESC", (proj['id'],)).fetchall()
+        temp_links = []
+        for l in links:
+            ld = dict(l)
+            ld['device_count'] = conn.execute("SELECT COUNT(*) as c FROM temp_link_devices WHERE link_id=?", (l['id'],)).fetchone()['c']
+            temp_links.append(ld)
         routes.append({
             'id': proj['id'], 'project_dir': proj['project_dir'], 'active': proj['active'],
             'paths': [{'id': p['id'], 'path': p['path']} for p in paths],
-            'temp_links': [dict(l) for l in links]
+            'temp_links': temp_links
         })
     conn.close()
     return render_template('admin.html', routes=routes)
@@ -222,9 +242,11 @@ def toggle_project(id):
 @admin_app.route('/create_temp_link/<int:id>', methods=['POST'])
 def create_temp_link(id):
     max_uses = request.form.get('max_uses', '').strip()
+    max_devices = request.form.get('max_devices', '').strip()
     valid_from = request.form.get('valid_from', '').strip()
     valid_until = request.form.get('valid_until', '').strip()
     duration = request.form.get('duration', '').strip()
+    expires_after = request.form.get('expires_after_hours', '').strip()
 
     token = str(uuid.uuid4())[:12]
     now = datetime.utcnow()
@@ -235,8 +257,9 @@ def create_temp_link(id):
 
     conn = get_db_connection()
     conn.execute(
-        "INSERT INTO temp_links (project_id, token, max_uses, valid_from, valid_until, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (id, token, int(max_uses) if max_uses else None, valid_from or None, valid_until or None, now.strftime('%Y-%m-%d %H:%M:%S'))
+        "INSERT INTO temp_links (project_id, token, max_uses, max_devices, expires_after_hours, valid_from, valid_until, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (id, token, int(max_uses) if max_uses else None, int(max_devices) if max_devices else None,
+         int(expires_after) if expires_after else None, valid_from or None, valid_until or None, now.strftime('%Y-%m-%d %H:%M:%S'))
     )
     conn.commit()
     conn.close()
@@ -246,6 +269,7 @@ def create_temp_link(id):
 @admin_app.route('/delete_temp_link/<int:link_id>', methods=['POST'])
 def delete_temp_link(link_id):
     conn = get_db_connection()
+    conn.execute("DELETE FROM temp_link_devices WHERE link_id=?", (link_id,))
     conn.execute("DELETE FROM temp_links WHERE id=?", (link_id,))
     conn.commit()
     conn.close()
@@ -261,6 +285,9 @@ def delete_project(id):
         dir_path = os.path.join(UPLOAD_FOLDER, proj['project_dir'])
         if os.path.exists(dir_path):
             shutil.rmtree(dir_path)
+        link_ids = [r['id'] for r in c.execute("SELECT id FROM temp_links WHERE project_id=?", (id,)).fetchall()]
+        for lid in link_ids:
+            c.execute("DELETE FROM temp_link_devices WHERE link_id=?", (lid,))
         c.execute("DELETE FROM temp_links WHERE project_id=?", (id,))
         c.execute("DELETE FROM project_paths WHERE project_id=?", (id,))
         c.execute("DELETE FROM projects WHERE id=?", (id,))
@@ -381,16 +408,49 @@ def temp_link(token, subpath='index.html'):
         conn.close()
         abort(404)
 
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    if link['valid_from'] and now < link['valid_from']:
+    now = datetime.utcnow()
+    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Check fixed time window
+    if link['valid_from'] and now_str < link['valid_from']:
         conn.close()
         abort(404)
-    if link['valid_until'] and now > link['valid_until']:
+    if link['valid_until'] and now_str > link['valid_until']:
         conn.close()
         abort(404)
+
+    # Check "expires X hours after first use"
+    if link['expires_after_hours']:
+        if link['first_used_at']:
+            first_used = datetime.strptime(link['first_used_at'], '%Y-%m-%d %H:%M:%S')
+            if now > first_used + timedelta(hours=link['expires_after_hours']):
+                conn.close()
+                abort(404)
+
+    # Check max total uses
     if link['max_uses'] and link['use_count'] >= link['max_uses']:
         conn.close()
         abort(404)
+
+    # Check max unique devices (IP + User-Agent hash)
+    device_hash = hashlib.sha256((request.remote_addr or '' + '|' + request.headers.get('User-Agent', '')).encode()).hexdigest()[:16]
+    if link['max_devices']:
+        existing_device = conn.execute("SELECT id FROM temp_link_devices WHERE link_id=? AND device_hash=?", (link['id'], device_hash)).fetchone()
+        if not existing_device:
+            device_count = conn.execute("SELECT COUNT(*) as c FROM temp_link_devices WHERE link_id=?", (link['id'],)).fetchone()['c']
+            if device_count >= link['max_devices']:
+                conn.close()
+                abort(404)
+            conn.execute("INSERT INTO temp_link_devices (link_id, device_hash, first_seen) VALUES (?, ?, ?)", (link['id'], device_hash, now_str))
+    else:
+        # Track device even without limit (for stats)
+        existing_device = conn.execute("SELECT id FROM temp_link_devices WHERE link_id=? AND device_hash=?", (link['id'], device_hash)).fetchone()
+        if not existing_device:
+            conn.execute("INSERT INTO temp_link_devices (link_id, device_hash, first_seen) VALUES (?, ?, ?)", (link['id'], device_hash, now_str))
+
+    # Set first_used_at on first access
+    if not link['first_used_at']:
+        conn.execute("UPDATE temp_links SET first_used_at=? WHERE id=?", (now_str, link['id']))
 
     conn.execute("UPDATE temp_links SET use_count = use_count + 1 WHERE id=?", (link['id'],))
     conn.commit()

@@ -424,15 +424,35 @@
                     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline);">
                         <div style="font-size: 13px; font-weight: 500; color: var(--md-sys-color-outline); margin-bottom: 8px;">Temporäre Links:</div>
                         {% for tl in row['temp_links'] %}
-                        <div class="url-editor" style="margin-bottom: 8px;">
+                        <div class="url-editor" style="margin-bottom: 8px; flex-wrap: wrap;">
                             <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">timer</span>
                             <div style="flex-grow:1; font-size: 13px;">
-                                <code>/t/{{ tl['token'] }}</code>
-                                <span style="color: var(--md-sys-color-outline); margin-left: 8px;">
-                                    {% if tl['max_uses'] %}{{ tl['use_count'] }}/{{ tl['max_uses'] }} Aufrufe{% else %}Unbegrenzte Aufrufe{% endif %}
-                                    {% if tl['valid_until'] %} | bis {{ tl['valid_until'] }}{% endif %}
-                                    {% if tl['valid_from'] %} | ab {{ tl['valid_from'] }}{% endif %}
-                                </span>
+                                <div><code>/t/{{ tl['token'] }}</code></div>
+                                <div style="color: var(--md-sys-color-outline); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
+                                        {% if tl['max_uses'] %}{{ tl['use_count'] }}/{{ tl['max_uses'] }} Aufrufe{% else %}{{ tl['use_count'] }} Aufrufe{% endif %}
+                                    </span>
+                                    {% if tl['max_devices'] %}
+                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
+                                        {{ tl['device_count'] }}/{{ tl['max_devices'] }} Geräte
+                                    </span>
+                                    {% else %}
+                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
+                                        {{ tl['device_count'] }} Geräte
+                                    </span>
+                                    {% endif %}
+                                    {% if tl['expires_after_hours'] %}
+                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">
+                                        {{ tl['expires_after_hours'] }}h ab erstem Aufruf{% if tl['first_used_at'] %} ({{ tl['first_used_at'] }}){% endif %}
+                                    </span>
+                                    {% endif %}
+                                    {% if tl['valid_until'] %}
+                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">bis {{ tl['valid_until'] }}</span>
+                                    {% endif %}
+                                    {% if tl['valid_from'] %}
+                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">ab {{ tl['valid_from'] }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
                             <form action="/delete_temp_link/{{ tl['id'] }}" method="post" style="margin:0;">
                                 <button type="submit" class="route-link danger" style="border:none; cursor:pointer; padding: 8px 12px;">
@@ -441,20 +461,36 @@
                             </form>
                         </div>
                         {% endfor %}
-                        <form action="/create_temp_link/{{ row['id'] }}" method="post" class="url-editor" style="margin-top: 4px; flex-wrap: wrap;">
-                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">add</span>
-                            <input type="number" name="max_uses" placeholder="Max. Aufrufe (leer=unbegrenzt)" min="1" style="width:180px; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                            <select name="duration" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                                <option value="">Kein Ablauf</option>
-                                <option value="1">1 Stunde</option>
-                                <option value="6">6 Stunden</option>
-                                <option value="24">1 Tag</option>
-                                <option value="168">1 Woche</option>
-                            </select>
-                            <span style="font-size:12px; color:var(--md-sys-color-outline);">oder:</span>
-                            <input type="datetime-local" name="valid_from" title="Gültig ab" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                            <input type="datetime-local" name="valid_until" title="Gültig bis" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                            <button type="submit" class="btn-filled" style="padding: 8px 16px;">Link erstellen</button>
+                        <form action="/create_temp_link/{{ row['id'] }}" method="post" style="background: #f7f2fb; padding: 16px; border-radius: 12px; margin-top: 4px;">
+                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 12px;">Neuen temporären Link erstellen:</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                <input type="number" name="max_uses" placeholder="Max. Aufrufe" min="1" style="width:130px; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                <input type="number" name="max_devices" placeholder="Max. Geräte" min="1" style="width:130px; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                <select name="duration" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                    <option value="">Festes Ablaufdatum</option>
+                                    <option value="1">Läuft ab in 1 Stunde</option>
+                                    <option value="6">Läuft ab in 6 Stunden</option>
+                                    <option value="24">Läuft ab in 1 Tag</option>
+                                    <option value="168">Läuft ab in 1 Woche</option>
+                                </select>
+                                <select name="expires_after_hours" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                    <option value="">Ab Öffnen: kein Limit</option>
+                                    <option value="1">Ab Öffnen: 1 Stunde</option>
+                                    <option value="6">Ab Öffnen: 6 Stunden</option>
+                                    <option value="24">Ab Öffnen: 1 Tag</option>
+                                    <option value="72">Ab Öffnen: 3 Tage</option>
+                                    <option value="168">Ab Öffnen: 1 Woche</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px;">
+                                <span style="font-size:12px; color:var(--md-sys-color-outline);">Zeitraum:</span>
+                                <input type="datetime-local" name="valid_from" title="Gültig ab" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                <span style="font-size:12px; color:var(--md-sys-color-outline);">bis</span>
+                                <input type="datetime-local" name="valid_until" title="Gültig bis" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
+                                <button type="submit" class="btn-filled" style="padding: 8px 16px; margin-left: auto;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">add</span> Link erstellen
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </li>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Seite nicht gefunden | HELA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        :root {
+            --md-sys-color-background: #FDFBFF;
+            --md-sys-color-on-background: #1A1B1F;
+            --md-sys-color-surface-container: #F2EDF7;
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-outline: #79747E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .error-container {
+            max-width: 480px;
+        }
+
+        .error-icon {
+            font-size: 80px;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 16px;
+        }
+
+        .error-code {
+            font-size: 96px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .error-message {
+            font-size: 16px;
+            color: var(--md-sys-color-outline);
+            line-height: 1.5;
+            margin-bottom: 32px;
+        }
+
+        .error-path {
+            display: inline-block;
+            background: var(--md-sys-color-surface-container);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--md-sys-color-on-background);
+            margin-bottom: 32px;
+            word-break: break-all;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+            transition: box-shadow 0.2s;
+        }
+
+        .back-button:hover {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .branding {
+            margin-top: 48px;
+            font-size: 12px;
+            color: var(--md-sys-color-outline);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <span class="material-symbols-outlined error-icon">explore_off</span>
+        <div class="error-code">404</div>
+        <h1 class="error-title">Seite nicht gefunden</h1>
+        <p class="error-message">Die angeforderte Seite existiert nicht oder wurde entfernt.</p>
+        <div class="error-path">{{ path }}</div>
+        <br>
+        <a href="/" class="back-button">
+            <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+            Zur Startseite
+        </a>
+        <div class="branding">HELA — Hypertext Efficient Launching Architecture</div>
+    </div>
+</body>
+
+</html>

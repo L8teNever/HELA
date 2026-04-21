@@ -8,7 +8,7 @@ from flask import Flask, request, render_template, abort, redirect, url_for, fla
 admin_app = Flask("admin_app", template_folder="templates")
 admin_app.secret_key = "hela_secret_key_very_secure"
 admin_app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
-host_app = Flask("host_app")
+host_app = Flask("host_app", template_folder="templates")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploaded_html')
@@ -228,7 +228,9 @@ def edit_file(id):
 @host_app.route('/<path:req_path>')
 def catch_all(req_path):
     search_path = '/' + req_path
-    
+    if not search_path.endswith('/'):
+        search_path += '/'
+
     conn = get_db_connection()
     routes = conn.execute("SELECT path, project_dir FROM projects").fetchall()
     conn.close()
@@ -253,7 +255,11 @@ def catch_all(req_path):
         proj_abs_dir = os.path.join(UPLOAD_FOLDER, matched_proj_dir)
         return send_from_directory(proj_abs_dir, subpath)
 
-    abort(404, description="Fehler 404: Diese URL ist unbekannt.")
+    abort(404)
+
+@host_app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html', path=request.path), 404
 
 def run_admin():
     admin_app.run(host='0.0.0.0', port=8000, debug=False, use_reloader=False)

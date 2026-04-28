@@ -28,7 +28,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS projects
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, project_dir TEXT, active INTEGER DEFAULT 1)''')
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, project_dir TEXT, active INTEGER DEFAULT 1, folder TEXT DEFAULT '')''')
     c.execute('''CREATE TABLE IF NOT EXISTS project_paths
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, path TEXT UNIQUE,
                   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
@@ -53,6 +53,8 @@ def init_db():
     cols = [row[1] for row in c.execute("PRAGMA table_info(projects)").fetchall()]
     if 'active' not in cols:
         c.execute("ALTER TABLE projects ADD COLUMN active INTEGER DEFAULT 1")
+    if 'folder' not in cols:
+        c.execute("ALTER TABLE projects ADD COLUMN folder TEXT DEFAULT ''")
     # Migrate: add new temp_links columns if missing
     tl_cols = [row[1] for row in c.execute("PRAGMA table_info(temp_links)").fetchall()]
     if 'max_devices' not in tl_cols:
@@ -96,7 +98,7 @@ STATE_LABELS = {STATE_ACTIVE: 'Aktiv', STATE_OFFLINE: 'Offline', STATE_DEACTIVAT
 @admin_app.route('/', methods=['GET'])
 def index():
     conn = get_db_connection()
-    projects = conn.execute("SELECT id, project_dir, active FROM projects ORDER BY id DESC").fetchall()
+    projects = conn.execute("SELECT id, project_dir, active, folder FROM projects ORDER BY id DESC").fetchall()
     routes = []
     now_24h = (datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
     for proj in projects:
@@ -110,15 +112,27 @@ def index():
         log_count = conn.execute("SELECT COUNT(*) as c FROM access_logs WHERE project_id=? AND timestamp > ?", (proj['id'], now_24h)).fetchone()['c']
         routes.append({
             'id': proj['id'], 'project_dir': proj['project_dir'], 'active': proj['active'],
+            'folder': proj['folder'] or '',
             'paths': [{'id': p['id'], 'path': p['path']} for p in paths],
             'temp_links': temp_links, 'log_count_24h': log_count
         })
+    # Group by folder
+    folders = {}
+    for r in routes:
+        fname = r['folder']
+        if fname not in folders:
+            folders[fname] = []
+        folders[fname].append(r)
+    # Get sorted folder list (empty string = no folder, at the end)
+    folder_names = sorted([f for f in folders if f], key=str.lower)
+    all_folders = folder_names + ([''] if '' in folders else [])
     conn.close()
-    return render_template('admin.html', routes=routes)
+    return render_template('admin.html', routes=routes, folders=folders, folder_names=all_folders)
 
 @admin_app.route('/create_project', methods=['POST'])
 def create_project():
     url_path = request.form.get('url_path', '').strip()
+    folder = request.form.get('folder', '').strip()
     if not url_path:
         flash("Fehler: URL-Pfad darf nicht leer sein.", "error")
         return redirect(url_for('index'))
@@ -141,7 +155,7 @@ def create_project():
         f.write(default_html)
 
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO projects (path, project_dir) VALUES (?, ?)", (url_path, project_id))
+    cursor.execute("INSERT INTO projects (path, project_dir, folder) VALUES (?, ?, ?)", (url_path, project_id, folder))
     new_id = cursor.lastrowid
     cursor.execute("INSERT INTO project_paths (project_id, path) VALUES (?, ?)", (new_id, url_path))
     conn.commit()
@@ -192,8 +206,9 @@ def upload():
             file.save(final_abs_path)
             file_count += 1
 
+    folder = request.form.get('folder', '').strip()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO projects (path, project_dir) VALUES (?, ?)", (url_path, project_id))
+    cursor.execute("INSERT INTO projects (path, project_dir, folder) VALUES (?, ?, ?)", (url_path, project_id, folder))
     new_id = cursor.lastrowid
     cursor.execute("INSERT INTO project_paths (project_id, path) VALUES (?, ?)", (new_id, url_path))
     conn.commit()
@@ -415,6 +430,46 @@ def edit_file(id):
         return redirect(url_for('file_manager', id=id))
 
     return render_template('editor.html', project=proj, file_path=file_path, content=content)
+
+@admin_app.route('/move_to_folder/<int:id>', methods=['POST'])
+def move_to_folder(id):
+    folder = request.form.get('folder', '').strip()
+    conn = get_db_connection()
+    conn.execute("UPDATE projects SET folder=? WHERE id=?", (folder, id))
+    conn.commit()
+    conn.close()
+    if folder:
+        flash(f"Projekt in Ordner '{folder}' verschoben.", "success")
+    else:
+        flash("Projekt aus Ordner entfernt.", "success")
+    return redirect(url_for('index'))
+
+@admin_app.route('/rename_folder', methods=['POST'])
+def rename_folder():
+    old_name = request.form.get('old_name', '').strip()
+    new_name = request.form.get('new_name', '').strip()
+    if not old_name or not new_name:
+        flash("Ordnername darf nicht leer sein.", "error")
+        return redirect(url_for('index'))
+    conn = get_db_connection()
+    conn.execute("UPDATE projects SET folder=? WHERE folder=?", (new_name, old_name))
+    conn.commit()
+    conn.close()
+    flash(f"Ordner '{old_name}' umbenannt zu '{new_name}'.", "success")
+    return redirect(url_for('index'))
+
+@admin_app.route('/delete_folder', methods=['POST'])
+def delete_folder():
+    folder_name = request.form.get('folder_name', '').strip()
+    if not folder_name:
+        flash("Kein Ordner angegeben.", "error")
+        return redirect(url_for('index'))
+    conn = get_db_connection()
+    conn.execute("UPDATE projects SET folder='' WHERE folder=?", (folder_name,))
+    conn.commit()
+    conn.close()
+    flash(f"Ordner '{folder_name}' aufgelöst. Projekte sind jetzt ohne Ordner.", "success")
+    return redirect(url_for('index'))
 
 # --- HOST APP ---
 @host_app.route('/', defaults={'req_path': ''})

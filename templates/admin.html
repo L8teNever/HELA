@@ -4,524 +4,982 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HELA - Hypertext Efficient Launching Architecture</title>
+    <title>HELA Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <style>
         :root {
-            --md-sys-color-background: #FDFBFF;
-            --md-sys-color-on-background: #1A1B1F;
-            --md-sys-color-surface: #FDFBFF;
-            --md-sys-color-surface-container: #F2EDF7;
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
-            --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-on-primary-container: #21005D;
-            --md-sys-color-error: #B3261E;
-            --md-sys-color-error-container: #F9DEDC;
-            --md-sys-color-on-error-container: #410E0B;
-            --md-sys-color-outline: #79747E;
+            --bg: #F6F2FA;
+            --text: #1A1B1F;
+            --surface: #FFFFFF;
+            --container: #F2EDF7;
+            --primary: #6750A4;
+            --on-primary: #FFFFFF;
+            --primary-container: #EADDFF;
+            --error: #B3261E;
+            --error-container: #F9DEDC;
+            --outline: #79747E;
+            --outline-light: #C4C0C9;
+            --success: #1B6D2F;
+            --success-bg: #C4EED0;
+            --warn: #E65100;
+            --warn-bg: #FFF3E0;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: var(--md-sys-color-background);
-            color: var(--md-sys-color-on-background);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
         }
 
-        .top-app-bar {
-            width: 100%;
+        /* ── Top Bar ── */
+        .bar {
             height: 64px;
-            background-color: var(--md-sys-color-surface);
+            background: var(--surface);
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-sizing: border-box;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            padding: 0 24px;
+            box-shadow: var(--shadow);
             position: sticky;
             top: 0;
             z-index: 100;
-        }
-
-        .top-app-bar h1 {
-            font-size: 22px;
-            font-weight: 500;
-            margin: 0 0 0 16px;
-            color: var(--md-sys-color-on-background);
-            flex-grow: 1;
-        }
-
-        .main-content {
-            width: 100%;
-            max-width: 900px;
-            padding: 24px;
-            box-sizing: border-box;
-            animation: fadein 0.5s ease-out;
-        }
-
-        @keyframes fadein {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card {
-            background-color: var(--md-sys-color-surface-container);
-            border-radius: 28px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            font-size: 24px;
-            font-weight: 400;
-            margin-top: 0;
-            margin-bottom: 32px;
-            color: var(--md-sys-color-on-background);
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 28px;
-        }
-
-        .input-field {
-            width: 100%;
-            box-sizing: border-box;
-            background-color: transparent;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 16px;
-            color: var(--md-sys-color-on-background);
-            outline: none;
-            transition: border-color 0.2s, padding 0.2s;
-        }
-
-        .input-field:focus {
-            border-color: var(--md-sys-color-primary);
-            border-width: 2px;
-            padding: 15px;
-        }
-
-        .input-label {
-            position: absolute;
-            top: -10px;
-            left: 12px;
-            background-color: var(--md-sys-color-surface-container);
-            padding: 0 4px;
-            font-size: 12px;
-            color: var(--md-sys-color-primary);
-        }
-
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-upload-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .file-upload-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 12px;
-            width: 100%;
-            padding: 18px;
-            border-radius: 12px;
-            border: 2px dashed var(--md-sys-color-outline);
-            background-color: transparent;
-            color: var(--md-sys-color-primary);
-            font-weight: 500;
-            font-size: 16px;
-            cursor: pointer;
-            box-sizing: border-box;
-            transition: background-color 0.2s, border-color 0.2s;
         }
-
-        .file-upload-wrapper:hover .file-upload-btn {
-            background-color: var(--md-sys-color-primary-container);
-            border-color: var(--md-sys-color-primary);
+        .bar-logo { display: flex; align-items: center; gap: 10px; }
+        .bar-logo .material-symbols-outlined { color: var(--primary); font-size: 28px; }
+        .bar h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+        .bar-spacer { flex-grow: 1; }
+        .bar-stats {
+            display: flex; gap: 16px; font-size: 13px; color: var(--outline);
+            align-items: center;
         }
+        .bar-stats strong { color: var(--text); font-weight: 600; }
 
-        .btn-filled {
+        /* ── Buttons ── */
+        .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            gap: 6px;
             border: none;
             border-radius: 100px;
-            padding: 12px 24px;
+            padding: 10px 20px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-            transition: opacity 0.2s;
             text-decoration: none;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--primary); color: var(--on-primary); }
+        .btn-outline { background: var(--container); color: var(--primary); }
+        .btn-danger { background: var(--error-container); color: #410E0B; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .btn-block { width: 100%; justify-content: center; }
+        .btn-ghost { background: transparent; color: var(--primary); padding: 6px 10px; }
+        .btn-ghost:hover { background: var(--container); }
+
+        .icon-btn {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; border-radius: 50%; cursor: pointer;
+            background: var(--container); color: var(--primary);
+            transition: background .15s;
+        }
+        .icon-btn:hover { background: var(--primary-container); }
+        .icon-btn.danger { color: var(--error); }
+        .icon-btn.danger:hover { background: var(--error-container); }
+
+        /* ── Layout ── */
+        .wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
         }
 
-        .btn-filled:hover {
-            opacity: 0.9;
-        }
-
-        .routes-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .route-item {
+        /* ── Toolbar ── */
+        .toolbar {
             display: flex;
-            flex-direction: column;
-            background-color: var(--md-sys-color-surface);
-            padding: 24px;
-            border-radius: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .route-path {
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--md-sys-color-on-background);
-            margin-bottom: 16px;
-        }
-
-        .action-links {
-            display: flex;
-            gap: 12px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
+        }
+        .toolbar-title {
+            font-size: 15px; font-weight: 500; color: var(--outline);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .search-box {
+            flex-grow: 1;
+            max-width: 300px;
+            padding: 8px 14px 8px 36px;
+            border: 1px solid var(--outline-light);
+            border-radius: 100px;
+            font-size: 14px;
+            outline: none;
+            background: var(--surface);
+            color: var(--text);
+            position: relative;
+        }
+        .search-box:focus { border-color: var(--primary); }
+        .search-wrap {
+            position: relative; flex-grow: 1; max-width: 300px;
+        }
+        .search-wrap .material-symbols-outlined {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            font-size: 18px; color: var(--outline);
+        }
+
+        /* ── Flash ── */
+        .flash {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
             margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: fadein .3s;
+        }
+        .flash-success { background: var(--success-bg); color: #0F5223; }
+        .flash-error { background: var(--error-container); color: #410E0B; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Folder Section ── */
+        .folder-section {
+            margin-bottom: 24px;
+        }
+        .folder-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--surface);
+            border-radius: var(--radius) var(--radius) 0 0;
+            border: 1px solid var(--outline-light);
+            border-bottom: none;
+            cursor: pointer;
+            user-select: none;
+            transition: background .15s;
+        }
+        .folder-header:hover { background: var(--container); }
+        .folder-header .material-symbols-outlined { color: var(--primary); font-size: 22px; }
+        .folder-header .arrow { font-size: 18px; color: var(--outline); transition: transform .2s; }
+        .folder-header.collapsed .arrow { transform: rotate(-90deg); }
+        .folder-name { font-size: 15px; font-weight: 600; flex-grow: 1; }
+        .folder-count {
+            font-size: 12px; color: var(--outline); background: var(--container);
+            padding: 2px 10px; border-radius: 100px;
+        }
+        .folder-actions { display: flex; gap: 4px; }
+        .folder-actions .icon-btn { width: 30px; height: 30px; }
+        .folder-actions .icon-btn .material-symbols-outlined { font-size: 16px; }
+
+        .folder-body {
+            border: 1px solid var(--outline-light);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            overflow: hidden;
+            transition: max-height .3s ease;
+        }
+        .folder-body.collapsed { display: none; }
+
+        /* No-folder projects get a simple container */
+        .no-folder-section .folder-body {
+            border: none;
+            border-radius: var(--radius);
+        }
+        .no-folder-section .project:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+        .no-folder-section .project:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+        .no-folder-section .project:only-child { border-radius: var(--radius); }
+
+        /* ── Project Card ── */
+        .project {
+            background: var(--surface);
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0ecf4;
+            transition: background .1s;
+        }
+        .project:last-child { border-bottom: none; }
+        .project:hover { background: #FDFBFF; }
+        .project.disabled { opacity: 0.5; }
+
+        .project-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .project-status {
+            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        }
+        .status-active { background: var(--success); }
+        .status-offline { background: var(--warn); }
+        .status-disabled { background: var(--error); }
+
+        .project-name {
+            font-size: 15px;
+            font-weight: 600;
+            flex-grow: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            padding: 2px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .badge-green { background: var(--success-bg); color: var(--success); }
+        .badge-orange { background: var(--warn-bg); color: var(--warn); }
+        .badge-red { background: var(--error-container); color: #410E0B; }
+        .badge-purple { background: var(--primary-container); color: var(--primary); }
+
+        .project-actions {
+            display: flex;
+            gap: 4px;
             align-items: center;
         }
 
-        .route-link {
-            text-decoration: none;
-            color: var(--md-sys-color-primary);
-            background-color: var(--md-sys-color-primary-container);
-            padding: 8px 16px;
+        /* ── State toggle (compact) ── */
+        .state-toggle {
+            display: inline-flex;
             border-radius: 100px;
+            overflow: hidden;
+            border: 1px solid var(--outline-light);
+        }
+        .state-toggle button {
+            border: none;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--surface);
+            color: var(--outline);
+            transition: all .15s;
+        }
+        .state-toggle button:hover { background: var(--container); }
+        .state-toggle button.active-1 { background: var(--success-bg); color: var(--success); }
+        .state-toggle button.active-2 { background: var(--warn-bg); color: var(--warn); }
+        .state-toggle button.active-0 { background: var(--error-container); color: #410E0B; }
+
+        /* ── Quick actions row ── */
+        .project-quick {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: opacity 0.2s;
-        }
-
-        .route-link:hover {
-            opacity: 0.8;
-        }
-
-        .route-link.danger {
-            background-color: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-        }
-
-        .url-editor {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background: #f7f2fb;
-            padding: 12px;
-            border-radius: 12px;
-        }
-
-        .url-editor input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 8px;
-            background: #fff;
-        }
-
-        .flash-messages {
-            margin-bottom: 24px;
-        }
-
-        .flash-message {
-            padding: 16px;
-            border-radius: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-        }
-
-        .flash-success {
-            background-color: #C4EED0;
-            color: #0F5223;
-        }
-
-        .flash-error {
-            background-color: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-on-error-container);
-        }
-
-        .split-layout {
-            display: flex;
-            gap: 24px;
+            margin-top: 8px;
             flex-wrap: wrap;
         }
 
-        .split-layout>.card {
+        /* ── Expandable sections ── */
+        .expand-trigger {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background .15s;
+        }
+        .expand-trigger:hover { background: var(--primary-container); }
+        .expand-trigger .material-symbols-outlined { font-size: 16px; transition: transform .2s; }
+        .expand-trigger.open .material-symbols-outlined { transform: rotate(180deg); }
+
+        .expand-content {
+            display: none;
+            padding: 12px 0 4px;
+        }
+        .expand-content.open { display: block; }
+
+        /* ── Sub rows ── */
+        .sub-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+        .sub-row input[type="text"], .sub-row input[type="number"] {
+            flex-grow: 1;
+            padding: 7px 12px;
+            border: 1px solid var(--outline-light);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            background: var(--surface);
+        }
+        .sub-row input:focus { border-color: var(--primary); }
+        .sub-row select {
+            padding: 7px;
+            border: 1px solid var(--outline-light);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--surface);
+        }
+
+        /* ── Temp link chip ── */
+        .tl-chip {
+            background: var(--container);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .tl-chip code { font-weight: 500; color: var(--primary); }
+        .tl-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .tl-meta span {
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* ── Move-to-folder dropdown ── */
+        .move-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .move-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--outline-light);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            min-width: 200px;
+            padding: 6px;
+            margin-top: 4px;
+        }
+        .move-menu.open { display: block; }
+        .move-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            color: var(--text);
+        }
+        .move-menu-item:hover { background: var(--container); }
+        .move-menu-item .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+        .move-menu input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--outline-light);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            margin-bottom: 4px;
+        }
+        .move-menu input:focus { border-color: var(--primary); }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 28px;
+            padding: 32px;
+            width: 90%;
+            max-width: 520px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            animation: modalin .2s ease-out;
+        }
+        @keyframes modalin { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal h3 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+
+        .modal .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .modal .tab {
             flex: 1;
-            min-width: 350px;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            background: var(--container);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--outline);
+        }
+        .modal .tab.active { background: var(--primary); color: var(--on-primary); }
+        .modal .tab-content { display: none; }
+        .modal .tab-content.active { display: block; }
+
+        /* ── Input ── */
+        .field {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--outline-light);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        .field:focus { border-color: var(--primary); border-width: 2px; padding: 11px 13px; }
+        select.field { background: var(--surface); }
+        .label { font-size: 12px; color: var(--outline); margin-bottom: 4px; display: block; font-weight: 500; }
+
+        /* ── Upload zone ── */
+        .upload-zone {
+            border: 2px dashed var(--outline-light);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 12px;
+            transition: all .2s;
+        }
+        .upload-zone:hover { border-color: var(--primary); background: var(--primary-container); }
+        .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        .divider { height: 1px; background: var(--outline-light); margin: 10px 0; }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--outline);
+        }
+        .empty-state .material-symbols-outlined { font-size: 56px; margin-bottom: 12px; display: block; color: var(--primary-container); }
+        .empty-state p { font-size: 15px; margin-top: 4px; }
+
+        /* ── Rename folder inline ── */
+        .rename-inline {
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+        .rename-inline.open { display: flex; }
+        .rename-inline input {
+            padding: 4px 10px;
+            border: 1px solid var(--outline-light);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .bar { padding: 0 16px; }
+            .wrap { padding: 16px 12px; }
+            .bar-stats { display: none; }
+            .project-actions { flex-wrap: wrap; }
+            .modal { padding: 24px; }
+            .search-wrap { max-width: 100%; }
         }
     </style>
 </head>
 
 <body>
-    <div class="top-app-bar">
-        <span class="material-symbols-outlined"
-            style="color: var(--md-sys-color-primary); font-size: 32px;">rocket_launch</span>
-        <h1>HELA Admin</h1>
-    </div>
+    {% macro render_project(row) %}
+    <div class="project {{ 'disabled' if row['active'] == 0 }}" data-project-name="{{ row['paths'][0]['path'] if row['paths'] else '' }}">
+        <div class="project-top">
+            <span class="project-status {{ 'status-active' if row['active'] == 1 else 'status-offline' if row['active'] == 2 else 'status-disabled' }}"></span>
+            <span class="project-name">{{ row['paths'][0]['path'] if row['paths'] else 'Kein Pfad' }}</span>
 
-    <div class="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="flash-message flash-{{ category }}">
-                <span class="material-symbols-outlined">{{ 'check_circle' if category == 'success' else 'error'
-                    }}</span>
-                {{ message }}
+            {% if row['active'] == 2 %}
+            <span class="badge badge-orange">Offline</span>
+            {% elif row['active'] == 0 %}
+            <span class="badge badge-red">Deaktiviert</span>
+            {% endif %}
+            {% if row['log_count_24h'] > 0 %}
+            <span class="badge badge-purple">{{ row['log_count_24h'] }} / 24h</span>
+            {% endif %}
+            {% if row['paths']|length > 1 %}
+            <span class="badge badge-purple">{{ row['paths']|length }} URLs</span>
+            {% endif %}
+            {% if row['temp_links']|length > 0 %}
+            <span class="badge badge-orange">{{ row['temp_links']|length }} Temp</span>
+            {% endif %}
+
+            <div class="project-actions">
+                <div class="state-toggle">
+                    <form action="/set_state/{{ row['id'] }}" method="post" style="display:contents;">
+                        <input type="hidden" name="state" value="1">
+                        <button type="submit" class="{{ 'active-1' if row['active'] == 1 }}" title="Aktiv">An</button>
+                    </form>
+                    <form action="/set_state/{{ row['id'] }}" method="post" style="display:contents;">
+                        <input type="hidden" name="state" value="2">
+                        <button type="submit" class="{{ 'active-2' if row['active'] == 2 }}" title="Offline (nur Temp-Links)">Offline</button>
+                    </form>
+                    <form action="/set_state/{{ row['id'] }}" method="post" style="display:contents;">
+                        <input type="hidden" name="state" value="0">
+                        <button type="submit" class="{{ 'active-0' if row['active'] == 0 }}" title="Deaktiviert (nicht erreichbar)">Aus</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="project-quick">
+            {% if row['paths'] %}
+            <a href="https://hela.l8tenever.com{{ row['paths'][0]['path'] }}" target="_blank" class="btn btn-outline btn-sm">
+                <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span> Ansehen
+            </a>
+            {% endif %}
+            <a href="/files/{{ row['id'] }}" class="btn btn-outline btn-sm">
+                <span class="material-symbols-outlined" style="font-size:14px">edit_document</span> Dateien
+            </a>
+            <a href="/logs/{{ row['id'] }}" class="btn btn-outline btn-sm">
+                <span class="material-symbols-outlined" style="font-size:14px">monitoring</span> Logs
+            </a>
+
+            <button class="expand-trigger" onclick="toggle(this)">
+                <span class="material-symbols-outlined">expand_more</span> URLs
+            </button>
+            <button class="expand-trigger" onclick="toggle(this)">
+                <span class="material-symbols-outlined">expand_more</span> Temp-Links
+            </button>
+
+            <div style="flex-grow:1"></div>
+
+            <!-- Move to folder -->
+            <div class="move-dropdown">
+                <button class="icon-btn" title="In Ordner verschieben" onclick="toggleMoveMenu(this)">
+                    <span class="material-symbols-outlined" style="font-size:18px">drive_file_move</span>
+                </button>
+                <div class="move-menu">
+                    <form action="/move_to_folder/{{ row['id'] }}" method="post" id="move-form-{{ row['id'] }}">
+                        <input type="text" name="folder" placeholder="Ordnername..." value="{{ row['folder'] }}" onkeydown="if(event.key==='Enter'){this.form.submit();}">
+                    </form>
+                    {% if row['folder'] %}
+                    <form action="/move_to_folder/{{ row['id'] }}" method="post">
+                        <input type="hidden" name="folder" value="">
+                        <button type="submit" class="move-menu-item">
+                            <span class="material-symbols-outlined">folder_off</span> Aus Ordner entfernen
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% for fn in folder_names if fn and fn != row['folder'] %}
+                    <form action="/move_to_folder/{{ row['id'] }}" method="post">
+                        <input type="hidden" name="folder" value="{{ fn }}">
+                        <button type="submit" class="move-menu-item">
+                            <span class="material-symbols-outlined">folder</span> {{ fn }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <form action="/delete/{{ row['id'] }}" method="post" onsubmit="return confirm('Projekt und alle Dateien löschen?');">
+                <button type="submit" class="icon-btn danger" title="Löschen">
+                    <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- URLs (expandable) -->
+        <div class="expand-content">
+            {% for p in row['paths'] %}
+            <div class="sub-row">
+                <span class="material-symbols-outlined" style="font-size:16px; color:var(--primary)">link</span>
+                <form action="/edit_url/{{ p['id'] }}" method="post" style="display:flex; gap:6px; flex-grow:1; margin:0;">
+                    <input type="text" name="new_url" value="{{ p['path'] }}" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Speichern</button>
+                </form>
+                <form action="/remove_url/{{ p['id'] }}" method="post" style="margin:0;" onsubmit="return confirm('URL entfernen?');">
+                    <button type="submit" class="icon-btn danger" style="width:28px;height:28px;">
+                        <span class="material-symbols-outlined" style="font-size:16px">close</span>
+                    </button>
+                </form>
             </div>
             {% endfor %}
+            <form action="/add_url/{{ row['id'] }}" method="post" class="sub-row" style="margin-top: 4px;">
+                <span class="material-symbols-outlined" style="font-size:16px; color:var(--primary)">add_link</span>
+                <input type="text" name="new_url" placeholder="/neue-url/" required>
+                <button type="submit" class="btn btn-outline btn-sm">Hinzufügen</button>
+            </form>
         </div>
+
+        <!-- Temp Links (expandable) -->
+        <div class="expand-content">
+            {% for tl in row['temp_links'] %}
+            <div class="tl-chip">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <code>/t/{{ tl['token'] }}</code>
+                    <form action="/delete_temp_link/{{ tl['id'] }}" method="post" style="margin:0;">
+                        <button type="submit" class="icon-btn danger" style="width:24px;height:24px;">
+                            <span class="material-symbols-outlined" style="font-size:14px">close</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="tl-meta">
+                    <span style="background:var(--primary-container); color:var(--primary);">
+                        {% if tl['max_uses'] %}{{ tl['use_count'] }}/{{ tl['max_uses'] }} Aufrufe{% else %}{{ tl['use_count'] }} Aufrufe{% endif %}
+                    </span>
+                    {% if tl['max_devices'] %}
+                    <span style="background:var(--primary-container); color:var(--primary);">{{ tl['device_count'] }}/{{ tl['max_devices'] }} Geräte</span>
+                    {% elif tl['device_count'] > 0 %}
+                    <span style="background:var(--primary-container); color:var(--primary);">{{ tl['device_count'] }} Geräte</span>
+                    {% endif %}
+                    {% if tl['expires_after_hours'] %}
+                    <span style="background:var(--warn-bg); color:var(--warn);">{{ tl['expires_after_hours'] }}h ab Öffnen{% if tl['first_used_at'] %} ({{ tl['first_used_at'][:16] }}){% endif %}</span>
+                    {% endif %}
+                    {% if tl['valid_until'] %}
+                    <span style="background:var(--warn-bg); color:var(--warn);">bis {{ tl['valid_until'][:16] }}</span>
+                    {% endif %}
+                    {% if tl['valid_from'] %}
+                    <span style="background:var(--warn-bg); color:var(--warn);">ab {{ tl['valid_from'][:16] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="divider"></div>
+            <form action="/create_temp_link/{{ row['id'] }}" method="post">
+                <div style="font-size:12px; font-weight:500; margin-bottom:6px; color:var(--outline);">Neuer Temp-Link</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                    <input type="number" name="max_uses" placeholder="Max Aufrufe" min="1" class="field" style="width:110px; margin:0; padding:7px 10px; font-size:12px;">
+                    <input type="number" name="max_devices" placeholder="Max Geräte" min="1" class="field" style="width:110px; margin:0; padding:7px 10px; font-size:12px;">
+                    <select name="duration" class="field" style="width:auto; margin:0; padding:7px 10px; font-size:12px;">
+                        <option value="">Kein Ablauf</option>
+                        <option value="1">1 Stunde</option>
+                        <option value="6">6 Stunden</option>
+                        <option value="24">1 Tag</option>
+                        <option value="168">1 Woche</option>
+                    </select>
+                    <select name="expires_after_hours" class="field" style="width:auto; margin:0; padding:7px 10px; font-size:12px;">
+                        <option value="">Ab Öffnen: --</option>
+                        <option value="1">1h ab Öffnen</option>
+                        <option value="6">6h ab Öffnen</option>
+                        <option value="24">1 Tag ab Öffnen</option>
+                        <option value="72">3 Tage ab Öffnen</option>
+                        <option value="168">1 Woche ab Öffnen</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                    <span style="font-size:11px; color:var(--outline);">Zeitraum:</span>
+                    <input type="datetime-local" name="valid_from" class="field" style="width:auto; margin:0; padding:7px; font-size:12px;">
+                    <span style="font-size:11px; color:var(--outline);">bis</span>
+                    <input type="datetime-local" name="valid_until" class="field" style="width:auto; margin:0; padding:7px; font-size:12px;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="margin-left:auto;">
+                        <span class="material-symbols-outlined" style="font-size:14px">add</span> Erstellen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endmacro %}
+
+    <div class="bar">
+        <div class="bar-logo">
+            <span class="material-symbols-outlined">rocket_launch</span>
+            <h1>HELA</h1>
+        </div>
+        <div class="bar-spacer"></div>
+        <div class="bar-stats">
+            <span><strong>{{ routes|length }}</strong> Projekte</span>
+            <span><strong>{{ routes|selectattr('active', 'equalto', 1)|list|length }}</strong> Aktiv</span>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('create')">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span> Neues Projekt
+        </button>
+    </div>
+
+    <div class="wrap">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            <span class="material-symbols-outlined" style="font-size: 18px;">{{ 'check_circle' if category == 'success' else 'error' }}</span>
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <div class="split-layout">
-            <!-- LEERES PROJEKT ERSTELLEN -->
-            <div class="card">
-                <h2 style="font-size: 20px;">Leeres Projekt erstellen</h2>
-                <p style="margin-bottom:24px; font-size:14px; color:#49454f;">Code deine Seite direkt über den
-                    Dateimanager im Browser.</p>
-                <form action="/create_project" method="post">
-                    <div class="input-group">
-                        <label class="input-label"
-                            style="background:var(--md-sys-color-surface-container)">Basis-URL</label>
-                        <input type="text" name="url_path" class="input-field" placeholder="/mein-projekt/" required>
-                    </div>
-                    <button type="submit" class="btn-filled" style="width:100%;">
-                        <span class="material-symbols-outlined">add_circle</span> Manuell erstellen
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-wrap">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" class="search-box" id="search-input" placeholder="Projekt suchen...">
+            </div>
+            <div style="flex-grow:1"></div>
+            <button class="btn btn-outline btn-sm" onclick="openModal('new-folder')">
+                <span class="material-symbols-outlined" style="font-size:16px">create_new_folder</span> Neuer Ordner
+            </button>
+        </div>
+
+        {% if routes|length == 0 %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">rocket_launch</span>
+            <strong>Noch keine Projekte</strong>
+            <p>Klicke oben auf "Neues Projekt", um loszulegen.</p>
+        </div>
+        {% else %}
+
+        {% for folder_name in folder_names %}
+        {% set folder_projects = folders[folder_name] %}
+
+        {% if folder_name %}
+        <!-- Named folder -->
+        <div class="folder-section" data-folder="{{ folder_name }}">
+            <div class="folder-header" onclick="toggleFolder(this)">
+                <span class="material-symbols-outlined">folder</span>
+                <span class="folder-name">{{ folder_name }}</span>
+                <span class="folder-count">{{ folder_projects|length }}</span>
+                <span class="material-symbols-outlined arrow">expand_more</span>
+                <div class="folder-actions" onclick="event.stopPropagation()">
+                    <button class="icon-btn" title="Umbenennen" onclick="startRenameFolder(this, '{{ folder_name }}')">
+                        <span class="material-symbols-outlined">edit</span>
                     </button>
+                    <form action="/delete_folder" method="post" style="display:contents" onsubmit="return confirm('Ordner auflösen? Projekte bleiben erhalten.')">
+                        <input type="hidden" name="folder_name" value="{{ folder_name }}">
+                        <button type="submit" class="icon-btn danger" title="Ordner auflösen">
+                            <span class="material-symbols-outlined">folder_off</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!-- Rename inline form (hidden) -->
+            <div class="rename-inline" id="rename-{{ folder_name|replace(' ', '_') }}">
+                <form action="/rename_folder" method="post" style="display:flex; gap:6px; align-items:center; padding:8px 16px; background:var(--surface); border:1px solid var(--outline-light); border-top:none;">
+                    <input type="hidden" name="old_name" value="{{ folder_name }}">
+                    <input type="text" name="new_name" value="{{ folder_name }}" required style="padding:6px 12px; border:1px solid var(--outline-light); border-radius:8px; font-size:13px; outline:none;">
+                    <button type="submit" class="btn btn-primary btn-sm">Speichern</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="cancelRenameFolder('{{ folder_name }}')">Abbrechen</button>
                 </form>
             </div>
-
-            <!-- ORDNER HOCHLADEN -->
-            <div class="card">
-                <h2 style="font-size: 20px;">Vorhandenes Projekt hochladen</h2>
-                <p style="margin-bottom:24px; font-size:14px; color:#49454f;">Lade fertige Ordner von deinem PC hoch.
-                </p>
-                <form action="/upload" method="post" enctype="multipart/form-data">
-                    <div class="input-group">
-                        <label class="input-label"
-                            style="background:var(--md-sys-color-surface-container)">Basis-URL</label>
-                        <input type="text" name="url_path" class="input-field" placeholder="/upload-projekt/" required>
-                    </div>
-                    <div class="input-group" style="margin-bottom: 12px;">
-                        <div class="file-upload-wrapper">
-                            <button type="button" class="file-upload-btn">
-                                <span class="material-symbols-outlined">upload_file</span> Ordner auswählen
-                            </button>
-                            <input type="file" name="site_files" class="file-upload-input" webkitdirectory directory
-                                multiple required id="file-input">
-                        </div>
-                        <div id="file-name-display" style="text-align:center; font-size:12px; margin-top:8px;"></div>
-                    </div>
-                    <button type="submit" class="btn-filled" style="width:100%;">
-                        <span class="material-symbols-outlined">publish</span> Upload
-                    </button>
-                </form>
+            <div class="folder-body">
+                {% for row in folder_projects %}
+                {{ render_project(row) }}
+                {% endfor %}
             </div>
         </div>
 
-        <div class="card">
-            <h2>Projektverwaltung</h2>
-            <ul class="routes-list">
-                {% for row in routes %}
-                <li class="route-item" style="{{ 'opacity: 0.45;' if row['active'] == 0 else 'opacity: 0.75;' if row['active'] == 2 else '' }}">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-                        <div class="route-path" style="margin-bottom: 0;">{{ row['paths'][0]['path'] if row['paths'] else 'Keine URL' }}</div>
-                        {% if row['active'] == 0 %}
-                        <span style="background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">Deaktiviert</span>
-                        {% elif row['active'] == 2 %}
-                        <span style="background: #FFF3E0; color: #E65100; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">Offline (nur Temp-Links)</span>
-                        {% endif %}
-                        {% if row['log_count_24h'] > 0 %}
-                        <span style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;">{{ row['log_count_24h'] }} Zugriffe (24h)</span>
-                        {% endif %}
-                    </div>
-                    <div class="action-links">
-                        {% if row['paths'] %}
-                        <a href="http://{{ request.host.split(':')[0] }}:8080{{ row['paths'][0]['path'] }}" target="_blank"
-                            class="route-link">Ansehen <span class="material-symbols-outlined"
-                                style="font-size: 18px;">open_in_new</span></a>
-                        {% endif %}
-                        <a href="/files/{{ row['id'] }}" class="route-link"
-                            style="background:#E8DEF8;color:#1D192B">Dateien <span
-                                class="material-symbols-outlined" style="font-size: 18px;">edit_document</span></a>
-                        <a href="/logs/{{ row['id'] }}" class="route-link"
-                            style="background:#E0F7FA;color:#006064">Logs <span
-                                class="material-symbols-outlined" style="font-size: 18px;">monitoring</span></a>
-                        <div style="display: flex; gap: 4px; align-items: center;">
-                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
-                                <input type="hidden" name="state" value="1">
-                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:#C4EED0; color:#0F5223; font-weight:700;' if row['active'] == 1 else 'background:#e8e8e8; color:#666;' }}">Aktiv</button>
-                            </form>
-                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
-                                <input type="hidden" name="state" value="2">
-                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:#FFF3E0; color:#E65100; font-weight:700;' if row['active'] == 2 else 'background:#e8e8e8; color:#666;' }}">Offline</button>
-                            </form>
-                            <form action="/set_state/{{ row['id'] }}" method="post" style="margin:0;">
-                                <input type="hidden" name="state" value="0">
-                                <button type="submit" class="route-link" style="border:none; cursor:pointer; padding: 6px 12px; font-size: 12px; {{ 'background:var(--md-sys-color-error-container); color:var(--md-sys-color-on-error-container); font-weight:700;' if row['active'] == 0 else 'background:#e8e8e8; color:#666;' }}">Aus</button>
-                            </form>
-                        </div>
-                        <form action="/delete/{{ row['id'] }}" method="post" style="margin:0;"
-                            onsubmit="return confirm('Wirklich löschen?');">
-                            <button type="submit" class="route-link danger" style="border:none; cursor:pointer;">Löschen
-                                <span class="material-symbols-outlined" style="font-size: 18px;">delete</span></button>
-                        </form>
-                    </div>
-
-                    <div style="margin-top: 8px;">
-                        <div style="font-size: 13px; font-weight: 500; color: var(--md-sys-color-outline); margin-bottom: 8px;">URLs für dieses Projekt:</div>
-                        {% for p in row['paths'] %}
-                        <div class="url-editor" style="margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">link</span>
-                            <form action="/edit_url/{{ p['id'] }}" method="post" style="display:flex; gap:8px; flex-grow:1; margin:0;">
-                                <input type="text" name="new_url" value="{{ p['path'] }}" required style="flex-grow:1; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                                <button type="submit" class="btn-filled" style="padding: 8px 16px;">Ändern</button>
-                            </form>
-                            <form action="/remove_url/{{ p['id'] }}" method="post" style="margin:0;" onsubmit="return confirm('URL entfernen?');">
-                                <button type="submit" class="route-link danger" style="border:none; cursor:pointer; padding: 8px 12px;">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                                </button>
-                            </form>
-                        </div>
-                        {% endfor %}
-                        <form action="/add_url/{{ row['id'] }}" method="post" class="url-editor" style="margin-top: 4px;">
-                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">add_link</span>
-                            <input type="text" name="new_url" placeholder="/weitere-url/" required style="flex-grow:1; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff;">
-                            <button type="submit" class="btn-filled" style="padding: 8px 16px;">Hinzufügen</button>
-                        </form>
-                    </div>
-
-                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline);">
-                        <div style="font-size: 13px; font-weight: 500; color: var(--md-sys-color-outline); margin-bottom: 8px;">Temporäre Links:</div>
-                        {% for tl in row['temp_links'] %}
-                        <div class="url-editor" style="margin-bottom: 8px; flex-wrap: wrap;">
-                            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary)">timer</span>
-                            <div style="flex-grow:1; font-size: 13px;">
-                                <div><code>/t/{{ tl['token'] }}</code></div>
-                                <div style="color: var(--md-sys-color-outline); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px;">
-                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
-                                        {% if tl['max_uses'] %}{{ tl['use_count'] }}/{{ tl['max_uses'] }} Aufrufe{% else %}{{ tl['use_count'] }} Aufrufe{% endif %}
-                                    </span>
-                                    {% if tl['max_devices'] %}
-                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
-                                        {{ tl['device_count'] }}/{{ tl['max_devices'] }} Geräte
-                                    </span>
-                                    {% else %}
-                                    <span style="background: var(--md-sys-color-primary-container); padding: 2px 8px; border-radius: 8px;">
-                                        {{ tl['device_count'] }} Geräte
-                                    </span>
-                                    {% endif %}
-                                    {% if tl['expires_after_hours'] %}
-                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">
-                                        {{ tl['expires_after_hours'] }}h ab erstem Aufruf{% if tl['first_used_at'] %} ({{ tl['first_used_at'] }}){% endif %}
-                                    </span>
-                                    {% endif %}
-                                    {% if tl['valid_until'] %}
-                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">bis {{ tl['valid_until'] }}</span>
-                                    {% endif %}
-                                    {% if tl['valid_from'] %}
-                                    <span style="background: #FFF3E0; padding: 2px 8px; border-radius: 8px;">ab {{ tl['valid_from'] }}</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <form action="/delete_temp_link/{{ tl['id'] }}" method="post" style="margin:0;">
-                                <button type="submit" class="route-link danger" style="border:none; cursor:pointer; padding: 8px 12px;">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                                </button>
-                            </form>
-                        </div>
-                        {% endfor %}
-                        <form action="/create_temp_link/{{ row['id'] }}" method="post" style="background: #f7f2fb; padding: 16px; border-radius: 12px; margin-top: 4px;">
-                            <div style="font-size: 13px; font-weight: 500; margin-bottom: 12px;">Neuen temporären Link erstellen:</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                                <input type="number" name="max_uses" placeholder="Max. Aufrufe" min="1" style="width:130px; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                <input type="number" name="max_devices" placeholder="Max. Geräte" min="1" style="width:130px; padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                <select name="duration" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                    <option value="">Festes Ablaufdatum</option>
-                                    <option value="1">Läuft ab in 1 Stunde</option>
-                                    <option value="6">Läuft ab in 6 Stunden</option>
-                                    <option value="24">Läuft ab in 1 Tag</option>
-                                    <option value="168">Läuft ab in 1 Woche</option>
-                                </select>
-                                <select name="expires_after_hours" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                    <option value="">Ab Öffnen: kein Limit</option>
-                                    <option value="1">Ab Öffnen: 1 Stunde</option>
-                                    <option value="6">Ab Öffnen: 6 Stunden</option>
-                                    <option value="24">Ab Öffnen: 1 Tag</option>
-                                    <option value="72">Ab Öffnen: 3 Tage</option>
-                                    <option value="168">Ab Öffnen: 1 Woche</option>
-                                </select>
-                            </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px;">
-                                <span style="font-size:12px; color:var(--md-sys-color-outline);">Zeitraum:</span>
-                                <input type="datetime-local" name="valid_from" title="Gültig ab" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                <span style="font-size:12px; color:var(--md-sys-color-outline);">bis</span>
-                                <input type="datetime-local" name="valid_until" title="Gültig bis" style="padding:10px; border:1px solid var(--md-sys-color-outline); border-radius:8px; background:#fff; font-size:13px;">
-                                <button type="submit" class="btn-filled" style="padding: 8px 16px; margin-left: auto;">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">add</span> Link erstellen
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </li>
-                {% else %}
-                <li style="color: #49454F; text-align: center; padding: 16px 0;">Noch keine Projekte gelaunched. Klicke
-                    links auf "Manuell erstellen" oder lade Ordner hoch!</li>
+        {% else %}
+        <!-- Projects without folder -->
+        <div class="folder-section no-folder-section">
+            {% if folder_names|length > 1 %}
+            <div style="font-size:13px; font-weight:500; color:var(--outline); padding:8px 4px; margin-top:8px;">
+                <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">folder_open</span>
+                Ohne Ordner
+            </div>
+            {% endif %}
+            <div class="folder-body">
+                {% for row in folder_projects %}
+                {{ render_project(row) }}
                 {% endfor %}
-            </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Create Project Modal -->
+    <div class="modal-overlay" id="modal-create">
+        <div class="modal">
+            <h3>Neues Projekt</h3>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(this, 'tab-manual')">
+                    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">edit</span> Manuell
+                </button>
+                <button class="tab" onclick="switchTab(this, 'tab-upload')">
+                    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">upload_file</span> Upload
+                </button>
+            </div>
+
+            <div id="tab-manual" class="tab-content active">
+                <form action="/create_project" method="post">
+                    <span class="label">Basis-URL</span>
+                    <input type="text" name="url_path" class="field" placeholder="/mein-projekt/" required>
+                    <span class="label">Ordner (optional)</span>
+                    <input type="text" name="folder" class="field" placeholder="z.B. Kunden, Intern, Tests..." list="folder-list">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span> Erstellen
+                    </button>
+                </form>
+            </div>
+
+            <div id="tab-upload" class="tab-content">
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <span class="label">Basis-URL</span>
+                    <input type="text" name="url_path" class="field" placeholder="/upload-projekt/" required>
+                    <span class="label">Ordner (optional)</span>
+                    <input type="text" name="folder" class="field" placeholder="z.B. Kunden, Intern, Tests..." list="folder-list">
+                    <div class="upload-zone" id="upload-zone">
+                        <span class="material-symbols-outlined" style="font-size:28px; display:block; margin-bottom:4px;">cloud_upload</span>
+                        <span id="upload-label">Ordner auswählen</span>
+                        <input type="file" name="site_files" webkitdirectory directory multiple required id="file-input">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span class="material-symbols-outlined" style="font-size:18px">publish</span> Hochladen
+                    </button>
+                </form>
+            </div>
+
+            <button class="btn btn-outline btn-block" style="margin-top: 12px;" onclick="closeModal('create')">Abbrechen</button>
         </div>
     </div>
+
+    <!-- New Folder Modal -->
+    <div class="modal-overlay" id="modal-new-folder">
+        <div class="modal">
+            <h3>Neuer Ordner</h3>
+            <p style="font-size:13px; color:var(--outline); margin-bottom:16px;">Ordner helfen dir, Projekte zu gruppieren. Du kannst Projekte jederzeit per Drag oder Button in Ordner verschieben.</p>
+            <form onsubmit="createFolder(event)">
+                <span class="label">Ordnername</span>
+                <input type="text" class="field" id="new-folder-name" placeholder="z.B. Kunden, Intern, Tests..." required>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span class="material-symbols-outlined" style="font-size:18px">create_new_folder</span> Ordner erstellen
+                </button>
+            </form>
+            <button class="btn btn-outline btn-block" style="margin-top: 12px;" onclick="closeModal('new-folder')">Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Datalist for existing folders -->
+    <datalist id="folder-list">
+        {% for fn in folder_names if fn %}
+        <option value="{{ fn }}">
+        {% endfor %}
+    </datalist>
+
     <script>
-        document.getElementById('file-input').addEventListener('change', function (e) {
-            var files = e.target.files;
-            var display = document.getElementById('file-name-display');
-            if (files && files.length > 0) { display.textContent = files.length + " Dateien ausgewählt."; display.style.color = "var(--md-sys-color-primary)"; } else { display.textContent = ""; }
+        function toggle(btn) {
+            btn.classList.toggle('open');
+            // Find the corresponding expand-content (skip other expand-triggers)
+            var triggers = btn.parentElement.querySelectorAll('.expand-trigger');
+            var contents = btn.parentElement.parentElement.querySelectorAll(':scope > .expand-content');
+            var idx = Array.from(triggers).indexOf(btn);
+            if (idx >= 0 && contents[idx]) {
+                contents[idx].classList.toggle('open');
+            }
+        }
+
+        function toggleFolder(header) {
+            header.classList.toggle('collapsed');
+            var body = header.parentElement.querySelector('.folder-body');
+            body.classList.toggle('collapsed');
+        }
+
+        function openModal(name) {
+            document.getElementById('modal-' + name).classList.add('open');
+        }
+
+        function closeModal(name) {
+            document.getElementById('modal-' + name).classList.remove('open');
+        }
+
+        function switchTab(btn, tabId) {
+            btn.closest('.modal').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            btn.closest('.modal').querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function toggleMoveMenu(btn) {
+            // Close all other menus first
+            document.querySelectorAll('.move-menu.open').forEach(m => m.classList.remove('open'));
+            var menu = btn.parentElement.querySelector('.move-menu');
+            menu.classList.toggle('open');
+            var input = menu.querySelector('input[type="text"]');
+            if (input) input.focus();
+        }
+
+        function startRenameFolder(btn, folderName) {
+            var id = 'rename-' + folderName.replace(/ /g, '_');
+            var el = document.getElementById(id);
+            if (el) {
+                el.classList.add('open');
+                el.querySelector('input[name="new_name"]').focus();
+            }
+        }
+
+        function cancelRenameFolder(folderName) {
+            var id = 'rename-' + folderName.replace(/ /g, '_');
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        }
+
+        function createFolder(e) {
+            e.preventDefault();
+            var name = document.getElementById('new-folder-name').value.trim();
+            if (!name) return;
+            // Creating a folder = just a name; projects get assigned to it
+            // We flash a message and reload so the folder appears in dropdown
+            closeModal('new-folder');
+            alert('Ordner "' + name + '" wird beim nächsten Projekt-Erstellen oder -Verschieben verfügbar.\n\nVerschiebe jetzt ein Projekt in diesen Ordner, indem du den Ordner-Button neben dem Projekt nutzt und "' + name + '" eingibst.');
+        }
+
+        // Close menus on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.move-dropdown')) {
+                document.querySelectorAll('.move-menu.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('open');
+            });
+        });
+
+        // File input display
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            var label = document.getElementById('upload-label');
+            if (e.target.files.length > 0) {
+                label.textContent = e.target.files.length + ' Dateien ausgewählt';
+                label.style.fontWeight = '700';
+            }
+        });
+
+        // Search filter
+        document.getElementById('search-input').addEventListener('input', function() {
+            var query = this.value.toLowerCase();
+            document.querySelectorAll('.project').forEach(function(p) {
+                var name = (p.getAttribute('data-project-name') || '').toLowerCase();
+                p.style.display = name.includes(query) ? '' : 'none';
+            });
+            // Show/hide empty folders
+            document.querySelectorAll('.folder-section').forEach(function(f) {
+                var visible = f.querySelectorAll('.project:not([style*="display: none"])').length;
+                f.style.display = visible > 0 ? '' : 'none';
+            });
         });
     </script>
 </body>

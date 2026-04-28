@@ -513,7 +513,7 @@
 </head>
 
 <body>
-    {% macro render_project(row) %}
+    {% macro render_project(row, folder_names, domains) %}
     <div class="project {{ 'disabled' if row['active'] == 0 }}" data-project-name="{{ row['paths'][0]['path'] if row['paths'] else '' }}">
         <div class="project-top">
             <span class="project-status {{ 'status-active' if row['active'] == 1 else 'status-offline' if row['active'] == 2 else 'status-disabled' }}"></span>
@@ -553,10 +553,29 @@
         </div>
 
         <div class="project-quick">
-            {% if row['paths'] %}
-            <a href="https://hela.l8tenever.com{{ row['paths'][0]['path'] }}" target="_blank" class="btn btn-outline btn-sm">
-                <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span> Ansehen
-            </a>
+            {% if row['paths'] and domains %}
+                {% if domains|length == 1 %}
+                <a href="{{ domains[0]['domain'] }}{{ row['paths'][0]['path'] }}" target="_blank" class="btn btn-outline btn-sm">
+                    <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span> Ansehen
+                </a>
+                {% else %}
+                <div class="move-dropdown">
+                    <button class="btn btn-outline btn-sm" onclick="toggleMoveMenu(this)">
+                        <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span> Ansehen
+                    </button>
+                    <div class="move-menu">
+                        {% for d in domains %}
+                        <a href="{{ d['domain'] }}{{ row['paths'][0]['path'] }}" target="_blank" class="move-menu-item" style="text-decoration:none; color:inherit;">
+                            <span class="material-symbols-outlined">language</span> {{ d['domain']|replace('https://','')|replace('http://','') }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% elif row['paths'] %}
+                <span class="btn btn-outline btn-sm" style="opacity:0.5; cursor:default;" title="Keine Domain konfiguriert">
+                    <span class="material-symbols-outlined" style="font-size:14px">open_in_new</span> Ansehen
+                </span>
             {% endif %}
             <a href="/files/{{ row['id'] }}" class="btn btn-outline btn-sm">
                 <span class="material-symbols-outlined" style="font-size:14px">edit_document</span> Dateien
@@ -636,10 +655,36 @@
         <div class="expand-content">
             {% for tl in row['temp_links'] %}
             <div class="tl-chip">
-                <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <code>/t/{{ tl['token'] }}</code>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    {% if domains %}
+                    <div class="move-dropdown" style="flex-grow:1; min-width:0;">
+                        {% if domains|length == 1 %}
+                        <a href="{{ domains[0]['domain'] }}/t/{{ tl['token'] }}" target="_blank" style="text-decoration:none;">
+                            <code style="color:var(--primary); word-break:break-all;">{{ domains[0]['domain'] }}/t/{{ tl['token'] }}</code>
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline btn-sm" onclick="toggleMoveMenu(this)" style="font-family:monospace; font-size:12px;">
+                            <span class="material-symbols-outlined" style="font-size:14px">language</span> /t/{{ tl['token'] }}
+                        </button>
+                        <div class="move-menu">
+                            {% for d in domains %}
+                            <a href="{{ d['domain'] }}/t/{{ tl['token'] }}" target="_blank" class="move-menu-item" style="text-decoration:none; color:inherit;">
+                                <span class="material-symbols-outlined">open_in_new</span>
+                                <span style="font-family:monospace; font-size:12px; word-break:break-all;">{{ d['domain']|replace('https://','')|replace('http://','') }}/t/{{ tl['token'] }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <code style="flex-grow:1;">/t/{{ tl['token'] }}</code>
+                    {% endif %}
+                    <button class="icon-btn copy-link-btn" style="width:28px; height:28px; flex-shrink:0;" title="Link kopieren"
+                        data-url="{{ domains[0]['domain'] if domains else '' }}/t/{{ tl['token'] }}">
+                        <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
+                    </button>
                     <form action="/delete_temp_link/{{ tl['id'] }}" method="post" style="margin:0;">
-                        <button type="submit" class="icon-btn danger" style="width:24px;height:24px;">
+                        <button type="submit" class="icon-btn danger" style="width:28px;height:28px; flex-shrink:0;">
                             <span class="material-symbols-outlined" style="font-size:14px">close</span>
                         </button>
                     </form>
@@ -712,6 +757,9 @@
             <span><strong>{{ routes|length }}</strong> Projekte</span>
             <span><strong>{{ routes|selectattr('active', 'equalto', 1)|list|length }}</strong> Aktiv</span>
         </div>
+        <button class="btn btn-outline btn-sm" onclick="openModal('settings')" title="Einstellungen">
+            <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+        </button>
         <button class="btn btn-primary" onclick="openModal('create')">
             <span class="material-symbols-outlined" style="font-size: 18px;">add</span> Neues Projekt
         </button>
@@ -783,7 +831,7 @@
             </div>
             <div class="folder-body">
                 {% for row in folder_projects %}
-                {{ render_project(row) }}
+                {{ render_project(row, folder_names, domains) }}
                 {% endfor %}
             </div>
         </div>
@@ -799,7 +847,7 @@
             {% endif %}
             <div class="folder-body">
                 {% for row in folder_projects %}
-                {{ render_project(row) }}
+                {{ render_project(row, folder_names, domains) }}
                 {% endfor %}
             </div>
         </div>
@@ -868,6 +916,50 @@
                 </button>
             </form>
             <button class="btn btn-outline btn-block" style="margin-top: 12px;" onclick="closeModal('new-folder')">Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="modal-settings">
+        <div class="modal">
+            <h3>Einstellungen</h3>
+
+            <div style="margin-bottom:20px;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary);">language</span>
+                    Base-Domains
+                </div>
+                <p style="font-size:12px; color:var(--outline); margin-bottom:12px;">
+                    Domains, über die deine Projekte erreichbar sind. Wird für den "Ansehen"-Button genutzt.
+                </p>
+
+                {% for d in domains %}
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="material-symbols-outlined" style="font-size:16px; color:var(--primary);">dns</span>
+                    <code style="flex-grow:1; font-size:13px; color:var(--text);">{{ d['domain'] }}</code>
+                    <form action="/delete_domain/{{ d['id'] }}" method="post" style="margin:0;">
+                        <button type="submit" class="icon-btn danger" style="width:28px; height:28px;">
+                            <span class="material-symbols-outlined" style="font-size:16px">close</span>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+
+                {% if not domains %}
+                <div style="font-size:13px; color:var(--outline); padding:12px; text-align:center; background:var(--container); border-radius:var(--radius-sm); margin-bottom:8px;">
+                    Keine Domains konfiguriert. "Ansehen" ist deaktiviert.
+                </div>
+                {% endif %}
+
+                <form action="/add_domain" method="post" style="display:flex; gap:8px; margin-top:8px;">
+                    <input type="text" name="domain" class="field" placeholder="z.B. meine-seite.de oder https://meine-seite.de" style="margin:0; flex-grow:1;">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <span class="material-symbols-outlined" style="font-size:16px">add</span> Hinzufügen
+                    </button>
+                </form>
+            </div>
+
+            <button class="btn btn-outline btn-block" onclick="closeModal('settings')">Schließen</button>
         </div>
     </div>
 
@@ -979,6 +1071,17 @@
             document.querySelectorAll('.folder-section').forEach(function(f) {
                 var visible = f.querySelectorAll('.project:not([style*="display: none"])').length;
                 f.style.display = visible > 0 ? '' : 'none';
+            });
+        });
+        // Copy temp link to clipboard
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.copy-link-btn');
+            if (!btn) return;
+            var url = btn.getAttribute('data-url');
+            navigator.clipboard.writeText(url).then(function() {
+                var icon = btn.querySelector('.material-symbols-outlined');
+                icon.textContent = 'check';
+                setTimeout(function() { icon.textContent = 'content_copy'; }, 1500);
             });
         });
     </script>

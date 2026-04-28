@@ -19,6 +19,14 @@ UPLOAD_FOLDER = os.path.join(DATA_DIR, 'uploaded_html')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, 'hela.db')
 
+# Migrate old DB/uploads from root to data/ if they exist
+OLD_DB = os.path.join(BASE_DIR, 'hela.db')
+OLD_UPLOADS = os.path.join(BASE_DIR, 'uploaded_html')
+if os.path.exists(OLD_DB) and not os.path.exists(DB_PATH):
+    shutil.copy2(OLD_DB, DB_PATH)
+if os.path.exists(OLD_UPLOADS) and not os.path.exists(UPLOAD_FOLDER):
+    shutil.copytree(OLD_UPLOADS, UPLOAD_FOLDER)
+
 # Project states: 1=Active, 2=Offline (only temp links), 0=Deactivated
 STATE_ACTIVE = 1
 STATE_OFFLINE = 2
@@ -48,6 +56,10 @@ def init_db():
                   timestamp TEXT NOT NULL, ip TEXT, user_agent TEXT, path TEXT,
                   via_temp_link INTEGER DEFAULT 0, temp_link_token TEXT,
                   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS settings
+                 (key TEXT PRIMARY KEY, value TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS base_domains
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT UNIQUE)''')
     c.execute("CREATE INDEX IF NOT EXISTS idx_access_logs_project_time ON access_logs (project_id, timestamp)")
     # Migrate: add active column if missing
     cols = [row[1] for row in c.execute("PRAGMA table_info(projects)").fetchall()]
@@ -126,8 +138,11 @@ def index():
     # Get sorted folder list (empty string = no folder, at the end)
     folder_names = sorted([f for f in folders if f], key=str.lower)
     all_folders = folder_names + ([''] if '' in folders else [])
+    # Load base domains
+    domain_rows = conn.execute("SELECT id, domain FROM base_domains ORDER BY id").fetchall()
+    domains = [{'id': r['id'], 'domain': r['domain']} for r in domain_rows]
     conn.close()
-    return render_template('admin.html', routes=routes, folders=folders, folder_names=all_folders)
+    return render_template('admin.html', routes=routes, folders=folders, folder_names=all_folders, domains=domains)
 
 @admin_app.route('/create_project', methods=['POST'])
 def create_project():
@@ -469,6 +484,35 @@ def delete_folder():
     conn.commit()
     conn.close()
     flash(f"Ordner '{folder_name}' aufgelöst. Projekte sind jetzt ohne Ordner.", "success")
+    return redirect(url_for('index'))
+
+@admin_app.route('/add_domain', methods=['POST'])
+def add_domain():
+    domain = request.form.get('domain', '').strip()
+    if not domain:
+        flash("Domain darf nicht leer sein.", "error")
+        return redirect(url_for('index'))
+    # Normalize: ensure https:// prefix, remove trailing slash
+    if not domain.startswith('http://') and not domain.startswith('https://'):
+        domain = 'https://' + domain
+    domain = domain.rstrip('/')
+    conn = get_db_connection()
+    if conn.execute("SELECT id FROM base_domains WHERE domain=?", (domain,)).fetchone():
+        flash("Diese Domain existiert bereits.", "error")
+    else:
+        conn.execute("INSERT INTO base_domains (domain) VALUES (?)", (domain,))
+        conn.commit()
+        flash(f"Domain '{domain}' hinzugefügt.", "success")
+    conn.close()
+    return redirect(url_for('index'))
+
+@admin_app.route('/delete_domain/<int:id>', methods=['POST'])
+def delete_domain(id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM base_domains WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    flash("Domain entfernt.", "success")
     return redirect(url_for('index'))
 
 # --- HOST APP ---

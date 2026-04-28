@@ -4,188 +4,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zugriffslogs - {{ project_name }} | HELA</title>
+    <title>Logs - {{ project_name }} | HELA</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <style>
         :root {
-            --md-sys-color-background: #FDFBFF;
-            --md-sys-color-on-background: #1A1B1F;
-            --md-sys-color-surface: #FDFBFF;
-            --md-sys-color-surface-container: #F2EDF7;
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
-            --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-outline: #79747E;
+            --bg: #F6F2FA;
+            --text: #1A1B1F;
+            --surface: #FFFFFF;
+            --container: #F2EDF7;
+            --primary: #6750A4;
+            --on-primary: #FFFFFF;
+            --primary-container: #EADDFF;
+            --error-container: #F9DEDC;
+            --outline: #79747E;
+            --outline-light: #C4C0C9;
+            --success-bg: #C4EED0;
+            --success: #0F5223;
+            --warn-bg: #FFF3E0;
+            --warn: #E65100;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: var(--md-sys-color-background);
-            color: var(--md-sys-color-on-background);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
         }
 
-        .top-app-bar {
-            width: 100%;
+        .bar {
             height: 64px;
-            background-color: var(--md-sys-color-surface);
+            background: var(--surface);
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-sizing: border-box;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            padding: 0 24px;
+            box-shadow: var(--shadow);
             position: sticky;
             top: 0;
             z-index: 100;
             gap: 12px;
         }
-
-        .top-app-bar a {
+        .bar a {
             text-decoration: none;
-            color: var(--md-sys-color-primary);
+            color: var(--primary);
             display: flex;
             align-items: center;
+            border-radius: 50%;
+            padding: 6px;
+            transition: background .15s;
         }
+        .bar a:hover { background: var(--container); }
+        .bar h1 { font-size: 18px; font-weight: 600; flex-grow: 1; }
 
-        .top-app-bar h1 {
-            font-size: 22px;
-            font-weight: 500;
-            margin: 0;
-            flex-grow: 1;
-        }
-
-        .main-content {
-            width: 100%;
+        .wrap {
             max-width: 1100px;
-            padding: 24px;
-            box-sizing: border-box;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
         }
 
-        .card {
-            background-color: var(--md-sys-color-surface-container);
-            border-radius: 28px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .stats {
+        /* Stats bar */
+        .stats-bar {
             display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
-
-        .stat-chip {
-            background: var(--md-sys-color-primary-container);
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 500;
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--outline-light);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 150px;
         }
+        .stat-card .material-symbols-outlined { font-size: 28px; color: var(--primary); }
+        .stat-value { font-size: 24px; font-weight: 700; }
+        .stat-label { font-size: 12px; color: var(--outline); font-weight: 500; }
+
+        /* Table */
+        .table-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--outline-light);
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 14px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--outline);
+            border-bottom: 1px solid var(--outline-light);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .table-scroll { overflow-x: auto; }
 
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
         }
-
         th {
             text-align: left;
-            padding: 12px 8px;
-            border-bottom: 2px solid var(--md-sys-color-outline);
-            font-weight: 500;
-            color: var(--md-sys-color-outline);
-            font-size: 12px;
+            padding: 10px 16px;
+            border-bottom: 2px solid var(--outline-light);
+            font-weight: 600;
+            color: var(--outline);
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
-
         td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e0e0e0;
-            vertical-align: top;
+            padding: 10px 16px;
+            border-bottom: 1px solid #f0ecf4;
+            vertical-align: middle;
         }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(103, 80, 164, 0.03); }
 
-        tr:hover td {
-            background: rgba(103, 80, 164, 0.04);
+        .cell-mono {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
         }
-
-        .ua-cell {
-            max-width: 300px;
+        .cell-ua {
+            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-size: 12px;
+            color: var(--outline);
+        }
+        .cell-time {
+            white-space: nowrap;
+            font-size: 12px;
         }
 
         .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 100px;
             font-size: 11px;
             font-weight: 500;
         }
+        .badge-url { background: var(--success-bg); color: var(--success); }
+        .badge-temp { background: var(--warn-bg); color: var(--warn); }
 
-        .badge-normal { background: #C4EED0; color: #0F5223; }
-        .badge-temp { background: #FFF3E0; color: #E65100; }
-
+        /* Pagination */
         .pagination {
             display: flex;
             gap: 8px;
             align-items: center;
             justify-content: center;
-            margin-top: 24px;
+            padding: 16px;
+            border-top: 1px solid var(--outline-light);
         }
-
         .pagination a, .pagination span {
-            padding: 8px 16px;
+            padding: 6px 16px;
             border-radius: 100px;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
         }
-
         .pagination a {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-primary);
+            background: var(--container);
+            color: var(--primary);
+            transition: background .15s;
         }
-
-        .pagination a:hover { opacity: 0.8; }
-
+        .pagination a:hover { background: var(--primary-container); }
         .pagination .current {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background: var(--primary);
+            color: var(--on-primary);
         }
 
-        .empty {
+        .empty-state {
             text-align: center;
-            padding: 48px;
-            color: var(--md-sys-color-outline);
+            padding: 60px 20px;
+            color: var(--outline);
+        }
+        .empty-state .material-symbols-outlined { font-size: 48px; color: var(--primary-container); display: block; margin-bottom: 8px; }
+
+        @media (max-width: 640px) {
+            .bar { padding: 0 16px; }
+            .wrap { padding: 16px 12px; }
+            .stats-bar { flex-direction: column; }
         }
     </style>
 </head>
 
 <body>
-    <div class="top-app-bar">
-        <a href="/"><span class="material-symbols-outlined">arrow_back</span></a>
-        <span class="material-symbols-outlined" style="color: var(--md-sys-color-primary); font-size: 28px;">monitoring</span>
-        <h1>Zugriffslogs: {{ project_name }}</h1>
+    <div class="bar">
+        <a href="/">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <span class="material-symbols-outlined" style="color: var(--primary); font-size: 22px;">monitoring</span>
+        <h1>Logs: {{ project_name }}</h1>
     </div>
 
-    <div class="main-content">
-        <div class="card">
-            <div class="stats">
-                <div class="stat-chip">{{ total }} Zugriffe gesamt</div>
+    <div class="wrap">
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="material-symbols-outlined">visibility</span>
+                <div>
+                    <div class="stat-value">{{ total }}</div>
+                    <div class="stat-label">Zugriffe gesamt</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-symbols-outlined">description</span>
+                <div>
+                    <div class="stat-value">{{ total_pages }}</div>
+                    <div class="stat-label">Seiten</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header">
+                <span class="material-symbols-outlined" style="font-size:18px">list_alt</span>
+                Zugriffslogs
             </div>
 
             {% if logs %}
-            <div style="overflow-x: auto;">
+            <div class="table-scroll">
                 <table>
                     <thead>
                         <tr>
@@ -199,17 +252,20 @@
                     <tbody>
                         {% for log in logs %}
                         <tr>
-                            <td style="white-space: nowrap;">{{ log['timestamp'] }}</td>
-                            <td><code>{{ log['ip'] }}</code></td>
-                            <td><code>{{ log['path'] }}</code></td>
+                            <td class="cell-time">{{ log['timestamp'] }}</td>
+                            <td class="cell-mono">{{ log['ip'] }}</td>
+                            <td class="cell-mono">{{ log['path'] }}</td>
                             <td>
                                 {% if log['via_temp_link'] %}
-                                <span class="badge badge-temp">Temp: {{ log['temp_link_token'] }}</span>
+                                <span class="badge badge-temp">
+                                    <span class="material-symbols-outlined" style="font-size:12px">link</span>
+                                    {{ log['temp_link_token'] }}
+                                </span>
                                 {% else %}
-                                <span class="badge badge-normal">URL</span>
+                                <span class="badge badge-url">URL</span>
                                 {% endif %}
                             </td>
-                            <td class="ua-cell" title="{{ log['user_agent'] }}">{{ log['user_agent'][:80] }}</td>
+                            <td class="cell-ua" title="{{ log['user_agent'] }}">{{ log['user_agent'][:80] }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -219,19 +275,24 @@
             {% if total_pages > 1 %}
             <div class="pagination">
                 {% if page > 1 %}
-                <a href="?page={{ page - 1 }}">Zurück</a>
+                <a href="?page={{ page - 1 }}">
+                    <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">chevron_left</span> Zurück
+                </a>
                 {% endif %}
-                <span class="current">Seite {{ page }} / {{ total_pages }}</span>
+                <span class="current">{{ page }} / {{ total_pages }}</span>
                 {% if page < total_pages %}
-                <a href="?page={{ page + 1 }}">Weiter</a>
+                <a href="?page={{ page + 1 }}">
+                    Weiter <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">chevron_right</span>
+                </a>
                 {% endif %}
             </div>
             {% endif %}
 
             {% else %}
-            <div class="empty">
-                <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 12px;">monitoring</span>
-                <p>Noch keine Zugriffe aufgezeichnet.</p>
+            <div class="empty-state">
+                <span class="material-symbols-outlined">monitoring</span>
+                <strong>Noch keine Zugriffe</strong>
+                <p style="margin-top:4px; font-size:14px;">Zugriffe werden automatisch aufgezeichnet.</p>
             </div>
             {% endif %}
         </div>

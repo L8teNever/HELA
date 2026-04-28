@@ -3,117 +3,235 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Editor - {{ file_path }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor - {{ file_path }} | HELA</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <style>
         :root {
-            --md-sys-color-background: #FDFBFF;
-            --md-sys-color-surface: #FDFBFF;
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-background: #1A1B1F;
+            --bg: #F6F2FA;
+            --text: #1A1B1F;
+            --surface: #FFFFFF;
+            --container: #F2EDF7;
+            --primary: #6750A4;
+            --on-primary: #FFFFFF;
+            --primary-container: #EADDFF;
+            --outline: #79747E;
+            --outline-light: #C4C0C9;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100%;
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--md-sys-color-background);
-            margin: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            height: 100vh;
         }
 
-        .top-app-bar {
-            width: 100%;
+        .bar {
             height: 64px;
-            background: var(--md-sys-color-surface);
+            background: var(--surface);
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            padding: 0 24px;
+            box-shadow: var(--shadow);
             flex-shrink: 0;
-            box-sizing: border-box;
+            z-index: 100;
+            gap: 12px;
+        }
+        .bar a {
+            text-decoration: none;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            border-radius: 50%;
+            padding: 6px;
+            transition: background .15s;
+        }
+        .bar a:hover { background: var(--container); }
+        .bar h1 { font-size: 16px; font-weight: 600; flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar .file-badge {
+            font-size: 11px;
+            background: var(--primary-container);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-weight: 500;
+            text-transform: uppercase;
+            flex-shrink: 0;
         }
 
-        .main-content {
-            width: 100%;
-            max-width: 1000px;
-            padding: 24px;
-            box-sizing: border-box;
+        .editor-wrap {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            padding: 16px 20px 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .editor-form {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .editor-container {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid #ddd;
+            background: #1E1E2E;
+            border-radius: var(--radius);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--outline-light);
+            min-height: 400px;
         }
+
+        .editor-tab-bar {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            height: 40px;
+            background: #181825;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .editor-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #CDD6F4;
+            background: #1E1E2E;
+            border-radius: 8px 8px 0 0;
+        }
+        .editor-tab .material-symbols-outlined { font-size: 14px; color: var(--primary); }
 
         .editor-textarea {
             flex-grow: 1;
             width: 100%;
-            padding: 16px;
+            padding: 16px 20px;
             border: none;
-            font-family: 'Consolas', monospace;
-            font-size: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
             resize: none;
             outline: none;
-            background: #1E1E1E;
-            color: #D4D4D4;
-            box-sizing: border-box;
+            background: #1E1E2E;
+            color: #CDD6F4;
+            tab-size: 4;
         }
 
-        .btn-save {
-            background: var(--md-sys-color-primary);
-            color: #fff;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 100px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
+        .editor-footer {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-top: 16px;
-            align-self: flex-end;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .editor-hint {
+            font-size: 12px;
+            color: var(--outline);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .editor-hint kbd {
+            background: var(--container);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: inherit;
         }
 
-        .btn-save:hover {
-            opacity: 0.9;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            border-radius: 100px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--primary); color: var(--on-primary); }
+
+        @media (max-width: 640px) {
+            .bar { padding: 0 16px; }
+            .editor-wrap { padding: 12px; }
         }
     </style>
 </head>
 
 <body>
-    <div class="top-app-bar">
-        <a href="/files/{{ project['id'] }}"
-            style="text-decoration:none; display:flex; align-items:center; color: var(--md-sys-color-on-background); margin-right: 16px;">
+    <div class="bar">
+        <a href="/files/{{ project['id'] }}">
             <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <h1 style="font-size:20px; font-weight:500; margin:0;">Editing: {{ file_path }}</h1>
+        <span class="material-symbols-outlined" style="color: var(--primary); font-size: 22px;">edit_document</span>
+        <h1>{{ file_path }}</h1>
+        {% set ext = file_path.rsplit('.', 1)[-1] if '.' in file_path else '' %}
+        {% if ext %}
+        <span class="file-badge">{{ ext }}</span>
+        {% endif %}
     </div>
 
-    <div class="main-content">
-        <form action="" method="post" style="display:flex; flex-direction:column; flex-grow:1;">
+    <div class="editor-wrap">
+        <form action="" method="post" class="editor-form">
             <div class="editor-container">
-                <!-- Using a dark theme for the code editor area natively -->
-                <textarea name="content" class="editor-textarea" spellcheck="false" required>{{ content }}</textarea>
+                <div class="editor-tab-bar">
+                    <div class="editor-tab">
+                        <span class="material-symbols-outlined">description</span>
+                        {{ file_path.split('/')[-1] }}
+                    </div>
+                </div>
+                <textarea name="content" class="editor-textarea" spellcheck="false">{{ content }}</textarea>
             </div>
-            <button type="submit" class="btn-save">
-                <span class="material-symbols-outlined">save</span>
-                Speichern
-            </button>
+            <div class="editor-footer">
+                <span class="editor-hint">
+                    <span class="material-symbols-outlined" style="font-size:14px">info</span>
+                    <kbd>Tab</kbd> für Einrückung
+                </span>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size:18px">save</span>
+                    Speichern
+                </button>
+            </div>
         </form>
     </div>
+
+    <script>
+        // Tab key support in textarea
+        var ta = document.querySelector('.editor-textarea');
+        ta.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                var s = this.selectionStart, end = this.selectionEnd;
+                this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = s + 4;
+            }
+            // Ctrl+S to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                this.form.submit();
+            }
+        });
+    </script>
 </body>
 
 </html>

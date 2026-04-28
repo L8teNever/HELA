@@ -3,215 +3,275 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Dateien - {{ project['path'] }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dateien - {{ project['path'] }} | HELA</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <style>
         :root {
-            --md-sys-color-background: #FDFBFF;
-            --md-sys-color-surface: #FDFBFF;
-            --md-sys-color-surface-container: #F2EDF7;
-            --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-background: #1A1B1F;
-            --md-sys-color-outline: #79747E;
+            --bg: #F6F2FA;
+            --text: #1A1B1F;
+            --surface: #FFFFFF;
+            --container: #F2EDF7;
+            --primary: #6750A4;
+            --on-primary: #FFFFFF;
+            --primary-container: #EADDFF;
+            --error: #B3261E;
+            --error-container: #F9DEDC;
+            --outline: #79747E;
+            --outline-light: #C4C0C9;
+            --success-bg: #C4EED0;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Roboto', sans-serif;
-            background: var(--md-sys-color-background);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
 
-        .top-app-bar {
-            width: 100%;
+        .bar {
             height: 64px;
-            background: var(--md-sys-color-surface);
+            background: var(--surface);
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            padding: 0 24px;
+            box-shadow: var(--shadow);
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 100;
+            gap: 12px;
         }
-
-        .main-content {
-            width: 100%;
-            max-width: 800px;
-            padding: 24px;
-            box-sizing: border-box;
-        }
-
-        .card {
-            background: var(--md-sys-color-surface-container);
-            border-radius: 24px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .file-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #e1dced;
-        }
-
-        .file-item:last-child {
-            border-bottom: none;
-        }
-
-        .file-name {
-            font-family: monospace;
-            font-size: 16px;
-            color: var(--md-sys-color-on-background);
-            display: flex;
-            align-items: center;
-        }
-
-        .btn-edit {
-            background: var(--md-sys-color-primary);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 100px;
+        .bar a {
             text-decoration: none;
+            color: var(--primary);
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-weight: 500;
+            border-radius: 50%;
+            padding: 6px;
+            transition: background .15s;
+        }
+        .bar a:hover { background: var(--container); }
+        .bar h1 { font-size: 18px; font-weight: 600; flex-grow: 1; }
+        .bar .file-count {
+            font-size: 13px; color: var(--outline);
+            background: var(--container); padding: 4px 12px;
+            border-radius: 100px; font-weight: 500;
+        }
+
+        .wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
+        }
+
+        .flash {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
             font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn-edit:hover {
-            opacity: 0.9;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 28px;
-        }
-
-        .input-field {
-            width: 100%;
-            box-sizing: border-box;
-            background-color: transparent;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 16px;
-            color: var(--md-sys-color-on-background);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-field:focus {
-            border-color: var(--md-sys-color-primary);
-            border-width: 2px;
-            padding: 15px;
-        }
-
-        .input-label {
-            position: absolute;
-            top: -10px;
-            left: 12px;
-            background-color: var(--md-sys-color-surface-container);
-            padding: 0 4px;
-            font-size: 12px;
-            color: var(--md-sys-color-primary);
-        }
-
-        .flash-messages {
-            margin-bottom: 24px;
-        }
-
-        .flash-message {
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 12px;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 8px;
+            animation: fadein .3s;
+        }
+        .flash-success { background: var(--success-bg); color: #0F5223; }
+        .flash-error { background: var(--error-container); color: #410E0B; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; } }
+
+        /* Create file card */
+        .create-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--outline-light);
+        }
+        .create-card h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--outline);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .create-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .create-form input {
+            flex-grow: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 1px solid var(--outline-light);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            outline: none;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .create-form input:focus { border-color: var(--primary); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            border-radius: 100px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity .15s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--primary); color: var(--on-primary); }
+        .btn-outline { background: var(--container); color: var(--primary); }
+        .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+        /* File list */
+        .file-section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--outline-light);
+            overflow: hidden;
+        }
+        .file-section-header {
+            padding: 14px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--outline);
+            border-bottom: 1px solid var(--outline-light);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0ecf4;
+            gap: 10px;
+            transition: background .1s;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-item:hover { background: #FDFBFF; }
+
+        .file-icon {
+            color: var(--primary);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .file-name {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            flex-grow: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-ext {
+            font-size: 11px;
+            color: var(--outline);
+            background: var(--container);
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-weight: 500;
+            text-transform: uppercase;
         }
 
-        .flash-success {
-            background-color: #C4EED0;
-            color: #0F5223;
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--outline);
         }
+        .empty-state .material-symbols-outlined { font-size: 48px; color: var(--primary-container); display: block; margin-bottom: 8px; }
 
-        .flash-error {
-            background-color: #F9DEDC;
-            color: #410E0B;
+        @media (max-width: 640px) {
+            .bar { padding: 0 16px; }
+            .wrap { padding: 16px 12px; }
+            .create-form { flex-direction: column; }
+            .create-form input { width: 100%; }
         }
     </style>
 </head>
 
 <body>
-    <div class="top-app-bar">
-        <a href="/"
-            style="text-decoration:none; display:flex; align-items:center; color: var(--md-sys-color-on-background); margin-right: 16px;">
+    <div class="bar">
+        <a href="/">
             <span class="material-symbols-outlined">arrow_back</span>
         </a>
-        <h1 style="font-size:22px; margin:0; font-weight:500; color:var(--md-sys-color-on-background);">Projektdateien:
-            {{ project['path'] }}</h1>
+        <span class="material-symbols-outlined" style="color: var(--primary); font-size: 22px;">folder_open</span>
+        <h1>{{ project['path'] }}</h1>
+        <span class="file-count">{{ files|length }} Dateien</span>
     </div>
 
-    <div class="main-content">
+    <div class="wrap">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="flash-message flash-{{ category }}">
-                <span class="material-symbols-outlined">info</span>
-                {{ message }}
-            </div>
-            {% endfor %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            <span class="material-symbols-outlined" style="font-size: 18px;">{{ 'check_circle' if category == 'success' else 'error' }}</span>
+            {{ message }}
         </div>
+        {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <div class="card">
-            <h2 style="margin-top:0; margin-bottom:24px; font-size:20px; font-weight:500;">Neue Datei anlegen</h2>
-            <form action="/create_file/{{ project['id'] }}" method="post"
-                style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-                <div class="input-group" style="margin:0; flex-grow:1; min-width:300px;">
-                    <label class="input-label">Dateiname oder Ordnerpfad (z.B. css/styles.css)</label>
-                    <input type="text" name="file_name" class="input-field" placeholder="neue-datei.html" required>
-                </div>
-                <button type="submit" class="btn-edit" style="padding: 16px 24px; font-size:16px;">
-                    <span class="material-symbols-outlined">note_add</span> Erstellen
+        <div class="create-card">
+            <h2>
+                <span class="material-symbols-outlined" style="font-size:18px">note_add</span>
+                Neue Datei anlegen
+            </h2>
+            <form action="/create_file/{{ project['id'] }}" method="post" class="create-form">
+                <input type="text" name="file_name" placeholder="z.B. index.html oder css/styles.css" required>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size:18px">add</span> Erstellen
                 </button>
             </form>
         </div>
 
-        <div class="card">
-            <h2 style="margin-top:0; font-size:20px; font-weight:500;">Aktuelle Dateien im Projekt</h2>
-            <ul class="file-list">
-                {% for file in files %}
-                <li class="file-item">
-                    <span class="file-name"><span class="material-symbols-outlined"
-                            style="margin-right:8px; color:#6750A4;">description</span>{{ file }}</span>
-                    <a href="/edit_file/{{ project['id'] }}?file={{ file|urlencode }}" class="btn-edit">
-                        Bearbeiten <span class="material-symbols-outlined" style="font-size:16px;">edit_document</span>
-                    </a>
-                </li>
-                {% else %}
-                <div style="padding: 16px; text-align:center; color:#49454F;">Keine Dateien gefunden.</div>
-                {% endfor %}
-            </ul>
+        <div class="file-section">
+            <div class="file-section-header">
+                <span class="material-symbols-outlined" style="font-size:18px">description</span>
+                Projektdateien
+            </div>
+            {% for file in files %}
+            <a href="/edit_file/{{ project['id'] }}?file={{ file|urlencode }}" class="file-item" style="text-decoration:none; color:inherit;">
+                <span class="material-symbols-outlined file-icon">
+                    {% if file.endswith('.html') %}code
+                    {% elif file.endswith('.css') %}css
+                    {% elif file.endswith('.js') %}javascript
+                    {% elif file.endswith('.json') %}data_object
+                    {% elif file.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp')) %}image
+                    {% else %}description{% endif %}
+                </span>
+                <span class="file-name">{{ file }}</span>
+                {% set ext = file.rsplit('.', 1)[-1] if '.' in file else '' %}
+                {% if ext %}
+                <span class="file-ext">{{ ext }}</span>
+                {% endif %}
+                <span class="material-symbols-outlined" style="font-size:18px; color:var(--outline);">chevron_right</span>
+            </a>
+            {% else %}
+            <div class="empty-state">
+                <span class="material-symbols-outlined">folder_off</span>
+                <strong>Keine Dateien vorhanden</strong>
+                <p style="margin-top:4px; font-size:14px;">Erstelle oben eine neue Datei.</p>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </body>
